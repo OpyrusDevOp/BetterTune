@@ -1,3 +1,4 @@
+import 'package:bettertune/screens/setup_screen.dart';
 import 'package:bettertune/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF0A1628),
         primaryColor: const Color(0xFF0A1628),
       ),
-      home: const WelcomeScreen(),
+      home: const SetupScreen(),
     );
   }
 }
