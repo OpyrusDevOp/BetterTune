@@ -1,4 +1,5 @@
 import 'package:bettertune/components/mini_player.dart';
+import 'package:bettertune/screens/albums_screen.dart';
 import 'package:bettertune/screens/artists_screen.dart';
 import 'package:bettertune/screens/home_screen.dart';
 import 'package:bettertune/screens/playlists_screen.dart';
@@ -20,7 +21,7 @@ class WelcomeScreenState extends State<WelcomeScreen>
   static List<Widget> pages = [
     HomeScreen(),
     SongsScreen(),
-    SongsScreen(),
+    AlbumsScreen(),
     ArtistsScreen(),
     PlaylistsScreen(),
   ];

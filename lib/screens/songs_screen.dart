@@ -112,78 +112,6 @@ class _SongsScreenState extends State<SongsScreen> {
     return sorted;
   }
 
-  void _showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A2332),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Text(
-                'Sort by',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            _buildSortOption('Title', 'title'),
-            _buildSortOption('Artist', 'artist'),
-            _buildSortOption('Album', 'album'),
-            _buildSortOption('Duration', 'duration'),
-            const Divider(color: Colors.white24, height: 32),
-            ListTile(
-              leading: Icon(
-                _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                color: Colors.white,
-              ),
-              title: Text(
-                _isAscending ? 'Ascending' : 'Descending',
-                style: const TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                setState(() {
-                  _isAscending = !_isAscending;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSortOption(String label, String value) {
-    return ListTile(
-      leading: RadioGroup<String>(
-        groupValue: _sortBy,
-        onChanged: (val) {
-          setState(() {
-            _sortBy = val!;
-          });
-          Navigator.pop(context);
-        },
-        child: Text(value),
-      ),
-      title: Text(label, style: const TextStyle(color: Colors.white)),
-      onTap: () {
-        setState(() {
-          _sortBy = value;
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -197,7 +125,7 @@ class _SongsScreenState extends State<SongsScreen> {
                   Text(
                     '${_songs.length} songs',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 14,
                     ),
                   ),
