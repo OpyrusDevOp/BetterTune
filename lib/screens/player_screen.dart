@@ -144,14 +144,6 @@ class PlayerScreenState extends State<PlayerScreen> {
                 children: [
                   IconButton(
                     icon: Icon(
-                      Icons.volume_up_outlined,
-                      color: Colors.white.withOpacity(0.6),
-                      size: 24,
-                    ),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: Icon(
                       Icons.repeat,
                       color: _isRepeat
                           ? Colors.white

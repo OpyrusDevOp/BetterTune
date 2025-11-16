@@ -30,6 +30,7 @@ class WelcomeScreenState extends State<WelcomeScreen>
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
           leading: Builder(
             builder: (context) {
               return IconButton(
@@ -40,17 +41,57 @@ class WelcomeScreenState extends State<WelcomeScreen>
               );
             },
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                // Add search functionality here
+              },
+            ),
+          ],
         ),
-        body: Builder(builder: (context) => pages[0]),
+        body: Builder(
+          builder: (context) => Padding(
+            padding: const EdgeInsetsDirectional.only(top: 20),
+            child: pages[0],
+          ),
+        ),
         drawer: Drawer(
+          backgroundColor: const Color(0xFF1A2332),
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              createDrawerOption('Songs', 0),
-              createDrawerOption('Playlists', 1),
-              createDrawerOption('Albums', 2),
-              createDrawerOption('Artists', 3),
-              createDrawerOption('Genres', 4),
+              DrawerHeader(
+                decoration: BoxDecoration(),
+
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 10,
+
+                    children: [
+                      Icon(
+                        Icons.music_note,
+                        size: 36,
+                        color: Colors.lightBlueAccent,
+                      ),
+                      Text(
+                        'BetterTune',
+
+                        style: TextStyle(
+                          color: Colors.lightBlueAccent,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              createDrawerOption('Songs', 0, Icons.music_note),
+              createDrawerOption('Playlists', 1, Icons.playlist_play),
+              createDrawerOption('Albums', 2, Icons.album),
+              createDrawerOption('Artists', 3, Icons.person),
+              createDrawerOption('Genres', 4, Icons.music_note),
             ],
           ),
         ),
@@ -65,16 +106,18 @@ class WelcomeScreenState extends State<WelcomeScreen>
     });
   }
 
-  ListTile createDrawerOption(String title, int itemIndex) => ListTile(
-    title: Text(title),
-    selected: _selectedIndex == itemIndex,
-    onTap: () {
-      // Update the state of the app
-      _onItemTapped(itemIndex);
-      // Then close the drawer
-      Navigator.pop(context);
-    },
-  );
+  ListTile createDrawerOption(String title, int itemIndex, IconData icon) =>
+      ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        selected: _selectedIndex == itemIndex,
+        onTap: () {
+          // Update the state of the app
+          _onItemTapped(itemIndex);
+          // Then close the drawer
+          Navigator.pop(context);
+        },
+      );
 
   Route<void> _createRoute() {
     return PageRouteBuilder(

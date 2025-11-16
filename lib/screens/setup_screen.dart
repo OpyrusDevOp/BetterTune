@@ -1,4 +1,3 @@
-import 'package:bettertune/screens/home_screen.dart';
 import 'package:bettertune/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
