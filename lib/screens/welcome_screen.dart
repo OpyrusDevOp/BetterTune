@@ -1,5 +1,6 @@
 import 'package:bettertune/screens/home_screen.dart';
 import 'package:bettertune/screens/player_screen.dart';
+import 'package:bettertune/screens/songs_screen.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -14,7 +15,13 @@ class WelcomeScreenState extends State<WelcomeScreen>
   int _selectedIndex = 0;
   late AnimationController _animationController;
 
-  static List<Widget> pages = [HomeScreen()];
+  static List<Widget> pages = [
+    HomeScreen(),
+    SongsScreen(),
+    SongsScreen(),
+    SongsScreen(),
+    SongsScreen(),
+  ];
   @override
   void initState() {
     _animationController = AnimationController(
@@ -53,7 +60,7 @@ class WelcomeScreenState extends State<WelcomeScreen>
         body: Builder(
           builder: (context) => Padding(
             padding: const EdgeInsetsDirectional.only(top: 20),
-            child: pages[0],
+            child: pages[_selectedIndex],
           ),
         ),
         drawer: Drawer(
@@ -87,11 +94,11 @@ class WelcomeScreenState extends State<WelcomeScreen>
                   ),
                 ),
               ),
-              createDrawerOption('Songs', 0, Icons.music_note),
-              createDrawerOption('Playlists', 1, Icons.playlist_play),
+              createDrawerOption('Accueil', 0, Icons.home),
+              createDrawerOption('Songs', 1, Icons.music_note),
               createDrawerOption('Albums', 2, Icons.album),
               createDrawerOption('Artists', 3, Icons.person),
-              createDrawerOption('Genres', 4, Icons.music_note),
+              createDrawerOption('Playlists', 4, Icons.playlist_play),
             ],
           ),
         ),
