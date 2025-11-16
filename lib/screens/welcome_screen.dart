@@ -1,4 +1,5 @@
 import 'package:bettertune/screens/home_screen.dart';
+import 'package:bettertune/screens/player_screen.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -8,10 +9,21 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => WelcomeScreenState();
 }
 
-class WelcomeScreenState extends State<WelcomeScreen> {
+class WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _animationController;
 
   static List<Widget> pages = [HomeScreen()];
+  @override
+  void initState() {
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +41,7 @@ class WelcomeScreenState extends State<WelcomeScreen> {
             },
           ),
         ),
-        body: pages[0],
+        body: Builder(builder: (context) => pages[0]),
         drawer: Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -63,6 +75,25 @@ class WelcomeScreenState extends State<WelcomeScreen> {
       Navigator.pop(context);
     },
   );
+
+  Route<void> _createRoute() {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const PlayerScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0);
+        const end = Offset.zero;
+        const curve = Curves.ease;
+
+        var tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
+
+        return SlideTransition(position: animation.drive(tween), child: child);
+      },
+    );
+  }
 
   Widget bottomPlayer() => Container(
     decoration: BoxDecoration(
@@ -111,7 +142,9 @@ class WelcomeScreenState extends State<WelcomeScreen> {
               // Song Info
               Expanded(
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(_createRoute());
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,

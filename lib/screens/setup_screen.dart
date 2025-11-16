@@ -101,8 +101,7 @@ class _SetupScreenState extends State<SetupScreen> {
                           const SnackBar(content: Text('Processing Data')),
                         );
 
-                        Navigator.pushReplacement(
-                          context,
+                        Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) => WelcomeScreen(),
                           ),
