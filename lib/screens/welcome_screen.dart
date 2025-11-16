@@ -1,6 +1,7 @@
 import 'package:bettertune/components/mini_player.dart';
 import 'package:bettertune/screens/artists_screen.dart';
 import 'package:bettertune/screens/home_screen.dart';
+import 'package:bettertune/screens/playlists_screen.dart';
 import 'package:bettertune/screens/songs_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +22,7 @@ class WelcomeScreenState extends State<WelcomeScreen>
     SongsScreen(),
     SongsScreen(),
     ArtistsScreen(),
-    SongsScreen(),
+    PlaylistsScreen(),
   ];
   @override
   void initState() {
