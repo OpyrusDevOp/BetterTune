@@ -1,10 +1,12 @@
 import 'package:bettertune/components/mini_player.dart';
+import 'package:bettertune/contexts/auth_context.dart';
 import 'package:bettertune/screens/albums_screen.dart';
 import 'package:bettertune/screens/artists_screen.dart';
 import 'package:bettertune/screens/home_screen.dart';
 import 'package:bettertune/screens/playlists_screen.dart';
 import 'package:bettertune/screens/songs_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -16,7 +18,6 @@ class WelcomeScreen extends StatefulWidget {
 class WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  late AnimationController _animationController;
 
   static List<Widget> pages = [
     HomeScreen(),
@@ -27,11 +28,6 @@ class WelcomeScreenState extends State<WelcomeScreen>
   ];
   @override
   void initState() {
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: 300),
-      vsync: this,
-    );
-    // TODO: implement initState
     super.initState();
   }
 
@@ -102,6 +98,16 @@ class WelcomeScreenState extends State<WelcomeScreen>
               createDrawerOption('Albums', 2, Icons.album),
               createDrawerOption('Artists', 3, Icons.person),
               createDrawerOption('Playlists', 4, Icons.playlist_play),
+
+              const SizedBox(height: 10),
+              Divider(),
+              const SizedBox(height: 10),
+              Consumer<AuthContext>(
+                builder: (context, authContext, child) => TextButton(
+                  onPressed: authContext.logout,
+                  child: Text("Déconnexion"),
+                ),
+              ),
             ],
           ),
         ),

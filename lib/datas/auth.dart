@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class User {
   final String id;
   final String name;
@@ -20,6 +22,37 @@ class User {
       email: json['Email'],
       hasPassword: json['HasPassword'] ?? false,
       hasConfiguredPassword: json['HasConfiguredPassword'] ?? false,
+    );
+  }
+}
+
+@immutable
+class AuthState {
+  bool get isAuthenticated => user != null;
+  final bool isLoading;
+  final String? accessToken;
+  final User? user;
+  final String? error;
+
+  const AuthState({
+    this.isLoading = false,
+    this.accessToken,
+    this.user,
+    this.error,
+  });
+
+  AuthState copyWith({
+    bool? isAuthenticated,
+    bool? isLoading,
+    String? accessToken,
+    User? user,
+    String? error,
+  }) {
+    return AuthState(
+      isLoading: isLoading ?? this.isLoading,
+      accessToken: accessToken ?? this.accessToken,
+      user: user ?? this.user,
+      error: error,
     );
   }
 }

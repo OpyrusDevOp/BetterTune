@@ -11,6 +11,8 @@ class AuthService {
   static const _deviceIdKey = 'device_id';
   static String? _serverUrl;
 
+  static set setServerUrl(String value) => _serverUrl = value;
+
   static Future<String> getDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
     var deviceId = prefs.getString(_deviceIdKey);
