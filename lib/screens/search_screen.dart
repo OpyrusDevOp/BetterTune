@@ -119,19 +119,24 @@ class _SearchScreenState extends State<SearchScreen> {
         final item = _searchResults[index];
 
         if (item is Song) {
-          return SongListItem(
-            song: item,
+          return GestureDetector(
             onTap: () {
               context.read<PlayerService>().playSong(item);
             },
-            onMorePressed: () {
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.transparent,
-                isScrollControlled: true,
-                builder: (context) => SongDetailsBottomSheet(song: item),
-              );
-            },
+            child: SongListItem(
+              song: item,
+              onTap: () {
+                context.read<PlayerService>().playSong(item);
+              },
+              onMorePressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (context) => SongDetailsBottomSheet(song: item),
+                );
+              },
+            ),
           );
         } else if (item is Artist) {
           // Wrap in a container to constrain height or use a list tile variant
