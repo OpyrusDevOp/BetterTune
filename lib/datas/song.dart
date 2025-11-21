@@ -1,3 +1,5 @@
+import 'package:audio_service/audio_service.dart';
+
 class Song {
   final String id;
   final String name;
@@ -42,4 +44,28 @@ class Song {
   }
 
   Duration get duration => Duration(microseconds: runTimeTicks ~/ 10);
+
+  MediaItem toMediaItem(String serverUrl) {
+    String? imageUrl;
+    final imageTag = imageTags['Primary'];
+    if (imageTag != null) {
+      imageUrl = '$serverUrl/Items/$id/Images/Primary?tag=$imageTag&quality=90';
+    }
+
+    return MediaItem(
+      id: id,
+      title: name,
+      artist: artist,
+      album: album,
+      duration: duration,
+      artUri: imageUrl != null ? Uri.parse(imageUrl) : null,
+      extras: {
+        'serverId': serverId,
+        'url': '$serverUrl/Audio/$id/stream?static=true&Container=mp3',
+        'artistId': artistId,
+        'albumId': albumId,
+        'imageTags': imageTags,
+      },
+    );
+  }
 }
