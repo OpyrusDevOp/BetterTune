@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'package:provider/provider.dart';
+import '../services/jellyfin_service.dart';
 import '../services/player_service.dart';
 import '../services/storage_service.dart';
 import '../components/song_details_bottom_sheet.dart';
@@ -15,6 +16,8 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class PlayerScreenState extends State<PlayerScreen> {
+  bool _showLyrics = false;
+
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
@@ -150,51 +153,110 @@ class PlayerScreenState extends State<PlayerScreen> {
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8.0,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: FutureBuilder<String?>(
-                                future: StorageService.getServerUrl(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData &&
-                                      snapshot.data != null) {
-                                    final serverUrl = snapshot.data!;
-                                    final imageTag = song.imageTags['Primary'];
-
-                                    if (imageTag != null) {
-                                      final imageUrl =
-                                          '$serverUrl/Items/${song.id}/Images/Primary?tag=$imageTag&quality=90';
-                                      return Image.network(
-                                        imageUrl,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return Container(
-                                                color: Colors.blue.shade900,
-                                                child: const Center(
-                                                  child: Icon(
-                                                    Icons.music_note,
-                                                    color: Colors.white,
-                                                    size: 80,
+                            child: _showLyrics
+                                ? Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black26,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.all(16),
+                                    child: FutureBuilder<String?>(
+                                      future: JellyfinService.getLyrics(
+                                        song.id,
+                                      ),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        }
+                                        if (snapshot.hasError ||
+                                            !snapshot.hasData ||
+                                            snapshot.data == null) {
+                                          return Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.lyrics_outlined,
+                                                  size: 48,
+                                                  color: Colors.white24,
+                                                ),
+                                                const SizedBox(height: 16),
+                                                Text(
+                                                  'No lyrics found',
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.6),
                                                   ),
                                                 ),
-                                              );
-                                            },
-                                      );
-                                    }
-                                  }
-                                  return Container(
-                                    color: Colors.blue.shade900,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.music_note,
-                                        color: Colors.white,
-                                        size: 80,
-                                      ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                        return SingleChildScrollView(
+                                          child: Text(
+                                            snapshot.data!,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              height: 1.6,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: FutureBuilder<String?>(
+                                      future: StorageService.getServerUrl(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData &&
+                                            snapshot.data != null) {
+                                          final serverUrl = snapshot.data!;
+                                          final imageTag =
+                                              song.imageTags['Primary'];
+
+                                          if (imageTag != null) {
+                                            final imageUrl =
+                                                '$serverUrl/Items/${song.id}/Images/Primary?tag=$imageTag&quality=90';
+                                            return Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Container(
+                                                      color:
+                                                          Colors.blue.shade900,
+                                                      child: const Center(
+                                                        child: Icon(
+                                                          Icons.music_note,
+                                                          color: Colors.white,
+                                                          size: 80,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                            );
+                                          }
+                                        }
+                                        return Container(
+                                          color: Colors.blue.shade900,
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.music_note,
+                                              color: Colors.white,
+                                              size: 80,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
                           ),
                         ),
 
@@ -242,7 +304,7 @@ class PlayerScreenState extends State<PlayerScreen> {
                                 size: 28,
                               ),
                               onPressed: () {
-                                // Toggle favorite (not implemented in service yet)
+                                player.toggleFavorite();
                               },
                             ),
                           ],
@@ -281,6 +343,20 @@ class PlayerScreenState extends State<PlayerScreen> {
                                 size: 24,
                               ),
                               onPressed: () => _showPlaylist(context),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.lyrics,
+                                color: _showLyrics
+                                    ? Colors.blue
+                                    : Colors.white.withOpacity(0.6),
+                                size: 24,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showLyrics = !_showLyrics;
+                                });
+                              },
                             ),
                           ],
                         ),

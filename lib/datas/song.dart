@@ -65,7 +65,36 @@ class Song {
         'artistId': artistId,
         'albumId': albumId,
         'imageTags': imageTags,
+        'isFavorite': isFavorite,
       },
+    );
+  }
+
+  Song copyWith({
+    String? id,
+    String? name,
+    String? serverId,
+    String? artist,
+    String? artistId,
+    String? album,
+    String? albumId,
+    int? runTimeTicks,
+    bool? isFavorite,
+    Map<String, String>? imageTags,
+    String? container,
+  }) {
+    return Song(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      serverId: serverId ?? this.serverId,
+      artist: artist ?? this.artist,
+      artistId: artistId ?? this.artistId,
+      album: album ?? this.album,
+      albumId: albumId ?? this.albumId,
+      runTimeTicks: runTimeTicks ?? this.runTimeTicks,
+      isFavorite: isFavorite ?? this.isFavorite,
+      imageTags: imageTags ?? this.imageTags,
+      container: container ?? this.container,
     );
   }
 }

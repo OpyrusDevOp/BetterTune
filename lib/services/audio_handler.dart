@@ -84,6 +84,12 @@ class AudioPlayerHandler extends BaseAudioHandler
   }
 
   @override
+  Future<void> addQueueItems(List<MediaItem> mediaItems) async {
+    final newQueue = queue.value..addAll(mediaItems);
+    queue.add(newQueue);
+  }
+
+  @override
   Future<void> updateQueue(List<MediaItem> queue) async {
     this.queue.add(queue);
   }

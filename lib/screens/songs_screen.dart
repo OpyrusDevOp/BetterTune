@@ -126,79 +126,72 @@ class _SongsScreenState extends State<SongsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (_isSelectionMode)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
+    return Column(
+      children: [
+        if (_isSelectionMode)
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            color: Colors.blue.withOpacity(0.2),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: _clearSelection,
                 ),
-                color: Colors.blue.withOpacity(0.2),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: _clearSelection,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_selectedSongs.length} selected',
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.queue_music, color: Colors.white),
-                      onPressed: _addToQueue,
-                      tooltip: 'Add to Queue',
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.playlist_play,
-                        color: Colors.white,
-                      ),
-                      onPressed: _playNext,
-                      tooltip: 'Play Next',
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                Text(
+                  '${_selectedSongs.length} selected',
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    Text(
-                      '${_songs.length} songs',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (_isLoading)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh, color: Colors.white),
-                      onPressed: _fetchSongs,
-                    ),
-                  ],
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.queue_music, color: Colors.white),
+                  onPressed: _addToQueue,
+                  tooltip: 'Add to Queue',
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.playlist_play, color: Colors.white),
+                  onPressed: _playNext,
+                  tooltip: 'Play Next',
+                ),
+              ],
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                Text(
+                  '${_songs.length} songs',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
+                ),
+                const Spacer(),
+                if (_isLoading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: _fetchSongs,
+                ),
+              ],
+            ),
+          ),
 
-            const SizedBox(height: 16),
+        const SizedBox(height: 16),
 
-            // Songs List
-            Expanded(child: _buildContent()),
-          ],
-        ),
-      ),
+        // Songs List
+        Expanded(child: _buildContent()),
+      ],
     );
   }
 

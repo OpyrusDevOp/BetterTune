@@ -5,6 +5,8 @@ import 'package:audio_service/audio_service.dart';
 import '../datas/song.dart';
 import 'storage_service.dart';
 
+import '../services/jellyfin_service.dart';
+
 class PlayerService extends ChangeNotifier {
   final AudioHandler _audioHandler;
 
@@ -35,7 +37,7 @@ class PlayerService extends ChangeNotifier {
         album: item.album ?? '',
         albumId: item.extras?['albumId'] ?? '',
         runTimeTicks: (item.duration?.inMicroseconds ?? 0) * 10,
-        isFavorite: false, // Not in MediaItem
+        isFavorite: item.extras?['isFavorite'] ?? false,
         imageTags: Map<String, String>.from(item.extras?['imageTags'] ?? {}),
       );
     }).toList();
@@ -115,6 +117,21 @@ class PlayerService extends ChangeNotifier {
     }
   }
 
+  Future<void> playSongs(List<Song> songs, {bool shuffle = false}) async {
+    final serverUrl = await StorageService.getServerUrl();
+    if (serverUrl == null || songs.isEmpty) return;
+
+    final mediaItems = songs.map((s) => s.toMediaItem(serverUrl)).toList();
+
+    if (shuffle) {
+      mediaItems.shuffle();
+    }
+
+    await _audioHandler.updateQueue(mediaItems);
+    await _audioHandler.skipToQueueItem(0);
+    await _audioHandler.play();
+  }
+
   Future<void> play() => _audioHandler.play();
   Future<void> pause() => _audioHandler.pause();
   Future<void> seek(Duration position) => _audioHandler.seek(position);
@@ -125,23 +142,35 @@ class PlayerService extends ChangeNotifier {
   Future<void> addToQueue(Song song) async {
     final serverUrl = await StorageService.getServerUrl();
     if (serverUrl == null) return;
-    await _audioHandler.addQueueItem(song.toMediaItem(serverUrl));
+
+    if (queue.isEmpty) {
+      await playSong(song);
+    } else {
+      await _audioHandler.addQueueItem(song.toMediaItem(serverUrl));
+    }
+  }
+
+  Future<void> addSongsToQueue(List<Song> songs) async {
+    final serverUrl = await StorageService.getServerUrl();
+    if (serverUrl == null) return;
+
+    if (queue.isEmpty) {
+      await playSongs(songs);
+    } else {
+      final mediaItems = songs.map((s) => s.toMediaItem(serverUrl)).toList();
+      await _audioHandler.addQueueItems(mediaItems);
+    }
   }
 
   Future<void> playNext(Song song) async {
     final serverUrl = await StorageService.getServerUrl();
     if (serverUrl == null) return;
 
-    // audio_service doesn't have explicit "insert next" in BaseAudioHandler,
-    // we need to implement it in AudioPlayerHandler or manipulate queue here.
-    // Let's manipulate queue here via updateQueue if possible, or cast handler.
-    // Ideally AudioPlayerHandler should have a custom method.
-    // For now, let's just add to end to be safe, or implement insert in handler.
-    // Let's cast to AudioPlayerHandler if we can, or use custom action.
+    if (queue.isEmpty) {
+      await playSong(song);
+      return;
+    }
 
-    // Since we are inside PlayerService, we can't easily cast _audioHandler if it's passed as AudioHandler.
-    // But we know it's AudioPlayerHandler.
-    // Let's assume we can use custom action.
     final item = song.toMediaItem(serverUrl);
     await _audioHandler.customAction('playNext', {
       'id': item.id,
@@ -152,12 +181,6 @@ class PlayerService extends ChangeNotifier {
       'artUri': item.artUri?.toString(),
       'extras': item.extras,
     });
-    // Wait, passing complex object in customAction might be tricky with serialization.
-    // Let's just add to queue for now to avoid complexity, or implement insert in handler.
-    // Actually, let's modify AudioPlayerHandler to support insert.
-
-    // Fallback: Add to end
-    await addToQueue(song);
   }
 
   void addToQueueNext(Song song) => playNext(song);
@@ -183,6 +206,34 @@ class PlayerService extends ChangeNotifier {
         break;
     }
     _audioHandler.setRepeatMode(mode);
+  }
+
+  Future<void> toggleFavorite() async {
+    final song = currentSong;
+    if (song == null) return;
+
+    final newIsFavorite = !song.isFavorite;
+
+    // Optimistic update
+    final currentItem = _audioHandler.mediaItem.value;
+    if (currentItem != null) {
+      final newExtras = Map<String, dynamic>.from(currentItem.extras ?? {});
+      newExtras['isFavorite'] = newIsFavorite;
+      final newItem = currentItem.copyWith(extras: newExtras);
+      await _audioHandler.updateMediaItem(newItem);
+
+      // Also update in queue if needed (AudioHandler might not sync queue automatically)
+      // For now, updating current item is enough for UI
+    }
+
+    final success = await JellyfinService.markFavorite(song.id, newIsFavorite);
+
+    if (!success) {
+      // Revert if failed
+      if (currentItem != null) {
+        await _audioHandler.updateMediaItem(currentItem);
+      }
+    }
   }
 
   @override

@@ -5,6 +5,7 @@ import 'package:bettertune/screens/artists_screen.dart';
 import 'package:bettertune/screens/home_screen.dart';
 import 'package:bettertune/screens/playlists_screen.dart';
 import 'package:bettertune/screens/songs_screen.dart';
+import 'package:bettertune/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,10 @@ class WelcomeScreenState extends State<WelcomeScreen>
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () {
-                // Add search functionality here
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SearchScreen()),
+                );
               },
             ),
           ],
