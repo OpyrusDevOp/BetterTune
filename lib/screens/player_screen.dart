@@ -4,6 +4,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import '../services/player_service.dart';
 import '../services/storage_service.dart';
+import '../components/song_details_bottom_sheet.dart';
 import '../datas/song.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -110,6 +111,21 @@ class PlayerScreenState extends State<PlayerScreen> {
             ),
             centerTitle: true,
             title: const Text('Now Playing'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: () {
+                  if (song != null) {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder: (context) => SongDetailsBottomSheet(song: song),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
           backgroundColor: const Color(0xFF1A2332),
           body: SafeArea(

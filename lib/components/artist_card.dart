@@ -1,31 +1,69 @@
 import 'package:flutter/material.dart';
-
 import '../datas/artist.dart';
+import '../services/storage_service.dart';
+import '../screens/artist_detail_screen.dart';
 
 class ArtistCard extends StatelessWidget {
   final Artist artist;
 
-  const ArtistCard({Key? key, required this.artist}) : super(key: key);
+  const ArtistCard({super.key, required this.artist});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Navigate to artist detail page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArtistDetailScreen(artist: artist),
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Artist Image (circular)
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: artist.color,
-              ),
-              child: const Center(
-                child: Icon(Icons.person, size: 60, color: Colors.white54),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: ClipOval(
+                child: FutureBuilder<String?>(
+                  future: StorageService.getServerUrl(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final serverUrl = snapshot.data!;
+                      final imageTag = artist.imageTags['Primary'];
+
+                      if (imageTag != null) {
+                        final imageUrl =
+                            '$serverUrl/Items/${artist.id}/Images/Primary?tag=$imageTag&quality=90';
+                        return Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[800],
+                              child: const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white54,
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    }
+                    return Container(
+                      color: Colors.grey[800],
+                      child: const Icon(
+                        Icons.person,
+                        size: 60,
+                        color: Colors.white54,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -41,16 +79,7 @@ class ArtistCard extends StatelessWidget {
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-
-          // Album Count
-          Text(
-            '${artist.albumCount} album${artist.albumCount != 1 ? 's' : ''}',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 14,
-            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -132,7 +132,7 @@ class PlayerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addToQueueNext(Song song) {
+  void playNext(Song song) {
     if (_queue.isEmpty) {
       addToQueue(song);
     } else {
@@ -140,6 +140,8 @@ class PlayerService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void addToQueueNext(Song song) => playNext(song);
 
   void toggleShuffle() {
     _isShuffle = !_isShuffle;

@@ -3,6 +3,7 @@ class Song {
   final String name;
   final String serverId;
   final String artist;
+  final String? artistId;
   final String album;
   final String albumId;
   final int runTimeTicks;
@@ -15,6 +16,7 @@ class Song {
     required this.name,
     required this.serverId,
     required this.artist,
+    this.artistId,
     required this.album,
     required this.albumId,
     required this.runTimeTicks,
@@ -29,6 +31,7 @@ class Song {
       name: json['Name'],
       serverId: json['ServerId'],
       artist: (json['Artists'] as List?)?.firstOrNull ?? 'Unknown Artist',
+      artistId: (json['ArtistIds'] as List?)?.firstOrNull,
       album: json['Album'] ?? 'Unknown Album',
       albumId: json['AlbumId'] ?? '',
       runTimeTicks: json['RunTimeTicks'] ?? 0,

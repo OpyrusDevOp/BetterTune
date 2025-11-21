@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../datas/album.dart';
+import '../services/jellyfin_service.dart';
+import '../services/storage_service.dart';
+import '../screens/album_detail_screen.dart';
 
 class AlbumCard extends StatelessWidget {
   final Album album;
@@ -11,7 +13,12 @@ class AlbumCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Navigate to album detail page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AlbumDetailScreen(album: album),
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(12),
       child: Column(
@@ -21,11 +28,42 @@ class AlbumCard extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: album.color,
-                child: const Center(
-                  child: Icon(Icons.album, size: 60, color: Colors.white54),
-                ),
+              child: FutureBuilder<String?>(
+                future: StorageService.getServerUrl(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final serverUrl = snapshot.data!;
+                    final imageTag = album.imageTags['Primary'];
+
+                    if (imageTag != null) {
+                      final imageUrl =
+                          '$serverUrl/Items/${album.id}/Images/Primary?tag=$imageTag&quality=90';
+                      return Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[800],
+                            child: const Center(
+                              child: Icon(
+                                Icons.album,
+                                size: 60,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  }
+                  return Container(
+                    color: Colors.grey[800],
+                    child: const Center(
+                      child: Icon(Icons.album, size: 60, color: Colors.white54),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -48,7 +86,7 @@ class AlbumCard extends StatelessWidget {
           Text(
             album.artist,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: Colors.white.withOpacity(0.6),
               fontSize: 14,
             ),
             maxLines: 1,
@@ -56,11 +94,11 @@ class AlbumCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
 
-          // Year and Track Count
+          // Year
           Text(
-            '${album.year} • ${album.trackCount} tracks',
+            '${album.year}',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.white.withOpacity(0.5),
               fontSize: 12,
             ),
           ),
@@ -70,67 +108,42 @@ class AlbumCard extends StatelessWidget {
   }
 }
 
-class AlbumsScreen extends StatelessWidget {
-  AlbumsScreen({super.key});
+class AlbumsScreen extends StatefulWidget {
+  const AlbumsScreen({super.key});
 
-  final List<Album> albums = [
-    Album(
-      title: 'Evolve',
-      artist: 'Imagine Dragons',
-      year: 2017,
-      trackCount: 11,
-      color: Colors.orange,
-    ),
-    Album(
-      title: 'A Moment Apart',
-      artist: 'ODESZA',
-      year: 2017,
-      trackCount: 16,
-      color: Colors.blue,
-    ),
-    Album(
-      title: 'Night Visions',
-      artist: 'Imagine Dragons',
-      year: 2012,
-      trackCount: 13,
-      color: Colors.purple,
-    ),
-    Album(
-      title: 'Down in Heaven',
-      artist: 'Twin Peaks',
-      year: 2016,
-      trackCount: 12,
-      color: Colors.red,
-    ),
-    Album(
-      title: 'Wilderness',
-      artist: 'HVÖNNÅ',
-      year: 2020,
-      trackCount: 10,
-      color: Colors.teal,
-    ),
-    Album(
-      title: 'AM',
-      artist: 'Arctic Monkeys',
-      year: 2013,
-      trackCount: 12,
-      color: Colors.indigo,
-    ),
-    Album(
-      title: 'After Hours',
-      artist: 'The Weeknd',
-      year: 2020,
-      trackCount: 14,
-      color: Colors.pink,
-    ),
-    Album(
-      title: 'Currents',
-      artist: 'Tame Impala',
-      year: 2015,
-      trackCount: 13,
-      color: Colors.deepPurple,
-    ),
-  ];
+  @override
+  State<AlbumsScreen> createState() => _AlbumsScreenState();
+}
+
+class _AlbumsScreenState extends State<AlbumsScreen> {
+  List<Album> _albums = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAlbums();
+  }
+
+  Future<void> _fetchAlbums() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+      final albums = await JellyfinService.getAlbums();
+      setState(() {
+        _albums = albums;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,9 +155,9 @@ class AlbumsScreen extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                '${albums.length} albums',
+                '${_albums.length} albums',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: Colors.white.withOpacity(0.6),
                   fontSize: 14,
                 ),
               ),
@@ -154,24 +167,55 @@ class AlbumsScreen extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // Albums Grid
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: albums.length,
-            itemBuilder: (context, index) {
-              final album = albums[index];
-              return AlbumCard(album: album);
-            },
-          ),
-        ),
+        // Content
+        Expanded(child: _buildContent()),
       ],
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Error loading albums',
+              style: TextStyle(color: Colors.red[300], fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(onPressed: _fetchAlbums, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_albums.isEmpty) {
+      return Center(
+        child: Text(
+          'No albums found',
+          style: TextStyle(color: Colors.white.withOpacity(0.6)),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: _albums.length,
+      itemBuilder: (context, index) {
+        final album = _albums[index];
+        return AlbumCard(album: album);
+      },
     );
   }
 }

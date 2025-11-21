@@ -6,6 +6,7 @@ class SongListItem extends StatelessWidget {
   final Song song;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final VoidCallback? onMorePressed;
   final bool isSelected;
 
   const SongListItem({
@@ -13,6 +14,7 @@ class SongListItem extends StatelessWidget {
     required this.song,
     required this.onTap,
     this.onLongPress,
+    this.onMorePressed,
     this.isSelected = false,
   });
 
@@ -116,9 +118,7 @@ class SongListItem extends StatelessWidget {
             // More Options
             IconButton(
               icon: Icon(Icons.more_vert, color: Colors.white.withOpacity(0.6)),
-              onPressed: () {
-                // Show options menu
-              },
+              onPressed: onMorePressed,
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/song_list_item.dart';
+import '../components/song_details_bottom_sheet.dart';
 import '../datas/song.dart';
 import '../services/jellyfin_service.dart';
 
@@ -262,6 +263,14 @@ class _SongsScreenState extends State<SongsScreen> {
           },
           onLongPress: () {
             _toggleSelection(song);
+          },
+          onMorePressed: () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              builder: (context) => SongDetailsBottomSheet(song: song),
+            );
           },
         );
       },
