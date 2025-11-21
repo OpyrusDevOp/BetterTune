@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../datas/song.dart';
+import '../services/storage_service.dart';
 
 class SongListItem extends StatelessWidget {
   final Song song;
@@ -18,11 +19,48 @@ class SongListItem extends StatelessWidget {
             // Album Art
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 56,
-                height: 56,
-                color: song.albumColor,
-                child: const Icon(Icons.album, color: Colors.white54, size: 28),
+              child: FutureBuilder<String?>(
+                future: StorageService.getServerUrl(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final serverUrl = snapshot.data!;
+                    final imageTag = song.imageTags['Primary'];
+
+                    if (imageTag != null) {
+                      final imageUrl =
+                          '$serverUrl/Items/${song.id}/Images/Primary?tag=$imageTag&quality=90';
+                      return Image.network(
+                        imageUrl,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 56,
+                            height: 56,
+                            color: Colors.grey[800],
+                            child: const Icon(
+                              Icons.music_note,
+                              color: Colors.white54,
+                              size: 28,
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  }
+
+                  return Container(
+                    width: 56,
+                    height: 56,
+                    color: Colors.grey[800],
+                    child: const Icon(
+                      Icons.music_note,
+                      color: Colors.white54,
+                      size: 28,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -33,7 +71,7 @@ class SongListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    song.title,
+                    song.name,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -58,7 +96,7 @@ class SongListItem extends StatelessWidget {
 
             // Duration
             Text(
-              song.duration,
+              _formatDuration(song.duration),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.6),
                 fontSize: 14,
@@ -76,5 +114,16 @@ class SongListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    final String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    if (duration.inHours > 0) {
+      return '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds';
+    } else {
+      return '$twoDigitMinutes:$twoDigitSeconds';
+    }
   }
 }
