@@ -96,6 +96,57 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 20.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _playAlbum(shuffle: false),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Play'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _playAlbum(shuffle: true),
+                      icon: const Icon(Icons.shuffle),
+                      label: const Text('Shuffle'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _addAlbumToQueue,
+                      icon: const Icon(Icons.queue_music),
+                      label: const Text('Queue'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF374151),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (_isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
@@ -162,5 +213,38 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
     final String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     final String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     return '$twoDigitMinutes:$twoDigitSeconds';
+  }
+
+  Future<void> _playAlbum({required bool shuffle}) async {
+    if (_songs.isEmpty) return;
+
+    try {
+      final player = Provider.of<PlayerService>(context, listen: false);
+      await player.playSongs(_songs, shuffle: shuffle);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error playing album: $e')));
+      }
+    }
+  }
+
+  Future<void> _addAlbumToQueue() async {
+    if (_songs.isEmpty) return;
+
+    try {
+      final player = Provider.of<PlayerService>(context, listen: false);
+      await player.addSongsToQueue(_songs);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Added to queue')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error adding to queue: $e')));
+      }
+    }
   }
 }

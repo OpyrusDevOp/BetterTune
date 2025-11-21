@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../datas/artist.dart';
 import '../datas/album.dart';
 import '../services/jellyfin_service.dart';
 import '../services/storage_service.dart';
+import '../services/player_service.dart';
 import '../screens/album_detail_screen.dart';
 
 class ArtistDetailScreen extends StatefulWidget {
@@ -90,6 +92,57 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [Colors.transparent, Color(0xFF1A2332)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 20.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _playArtistSongs(shuffle: false),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Play'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _playArtistSongs(shuffle: true),
+                      icon: const Icon(Icons.shuffle),
+                      label: const Text('Shuffle'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _addArtistToQueue,
+                      icon: const Icon(Icons.queue_music),
+                      label: const Text('Queue'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF374151),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ),
@@ -231,5 +284,40 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _playArtistSongs({required bool shuffle}) async {
+    try {
+      final songs = await JellyfinService.getSongs(artistId: widget.artist.id);
+      if (mounted) {
+        final player = Provider.of<PlayerService>(context, listen: false);
+        await player.playSongs(songs, shuffle: shuffle);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error playing artist: $e')));
+      }
+    }
+  }
+
+  Future<void> _addArtistToQueue() async {
+    try {
+      final songs = await JellyfinService.getSongs(artistId: widget.artist.id);
+      if (mounted) {
+        final player = Provider.of<PlayerService>(context, listen: false);
+        await player.addSongsToQueue(songs);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Added to queue')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error adding to queue: $e')));
+      }
+    }
   }
 }
