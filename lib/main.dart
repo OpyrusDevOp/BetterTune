@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import 'contexts/auth_context.dart';
 
+import 'services/player_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -13,7 +15,13 @@ void main() async {
   await authContext.initialize();
 
   runApp(
-    ChangeNotifierProvider(create: (context) => authContext, child: MyApp()),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => authContext),
+        ChangeNotifierProvider(create: (context) => PlayerService()),
+      ],
+      child: MyApp(),
+    ),
   );
 }
 

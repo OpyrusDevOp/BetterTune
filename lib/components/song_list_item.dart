@@ -5,14 +5,24 @@ import '../services/storage_service.dart';
 class SongListItem extends StatelessWidget {
   final Song song;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool isSelected;
 
-  const SongListItem({super.key, required this.song, required this.onTap});
+  const SongListItem({
+    super.key,
+    required this.song,
+    required this.onTap,
+    this.onLongPress,
+    this.isSelected = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: Padding(
+      onLongPress: onLongPress,
+      child: Container(
+        color: isSelected ? Colors.blue.withOpacity(0.2) : null,
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Row(
           children: [
