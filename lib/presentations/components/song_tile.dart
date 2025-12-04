@@ -45,7 +45,7 @@ class SongTile extends StatelessWidget {
                 Text(
                   '${song.artist} • ${song.album}',
                   style: TextStyle(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
                   maxLines: 1,
@@ -57,7 +57,10 @@ class SongTile extends StatelessWidget {
 
           // More Options
           IconButton(
-            icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.6)),
+            icon: Icon(
+              Icons.more_vert,
+              color: Colors.black.withValues(alpha: 0.6),
+            ),
             onPressed: () {},
           ),
         ],
