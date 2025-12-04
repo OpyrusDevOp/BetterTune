@@ -1,4 +1,5 @@
 import 'package:bettertune/presentations/components/mini_player.dart';
+
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -46,13 +47,6 @@ class MainScreenState extends State<MainScreen> {
           color: Colors.black87,
           borderRadius: BorderRadiusGeometry.circular(20),
           backgroundBlendMode: BlendMode.darken,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black87.withAlpha(76),
-              offset: Offset(0, 20),
-              blurRadius: 20,
-            ),
-          ],
         ),
         child: Container(
           alignment: AlignmentGeometry.topLeft,
