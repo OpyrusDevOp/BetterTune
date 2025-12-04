@@ -39,16 +39,16 @@ class MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         height: 70,
         padding: EdgeInsets.all(10),
-        margin: EdgeInsets.all(24),
+        margin: EdgeInsets.all(10),
         transformAlignment: AlignmentGeometry.topLeft,
         alignment: AlignmentGeometry.center,
         decoration: BoxDecoration(
-          color: Colors.black54,
+          color: Colors.black87,
           borderRadius: BorderRadiusGeometry.circular(20),
           backgroundBlendMode: BlendMode.darken,
           boxShadow: [
             BoxShadow(
-              color: Colors.black54.withAlpha(76),
+              color: Colors.black87.withAlpha(76),
               offset: Offset(0, 20),
               blurRadius: 20,
             ),
