@@ -14,13 +14,16 @@ class MiniPlayerState extends State<MiniPlayer> {
       Spacer(flex: 1),
       Expanded(
         flex: 20,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Solo", style: TextStyle(color: Colors.white)),
-            Text("Future", style: TextStyle(color: Colors.white)),
-          ],
+        child: GestureDetector(
+          onTap: () {},
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Solo", style: TextStyle(color: Colors.white)),
+              Text("Future", style: TextStyle(color: Colors.white)),
+            ],
+          ),
         ),
       ),
       IconButton(
