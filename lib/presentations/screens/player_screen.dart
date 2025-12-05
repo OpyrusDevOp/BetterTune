@@ -48,17 +48,7 @@ class PlayerScreenState extends State<PlayerScreen>
                 IconButton(onPressed: () {}, icon: Icon(Icons.add)),
               ],
             ),
-            SliderTheme(
-              data: SliderThemeData(
-                trackHeight: 3,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                // activeTrackColor: Colors.white,
-                // inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
-                // thumbColor: Colors.white,
-              ),
-              child: Slider(value: 10, min: 0, max: 60, onChanged: (value) {}),
-            ),
+            Slider(value: 10, min: 0, max: 60, onChanged: (value) {}),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15.0),
               child: Row(
@@ -76,7 +66,9 @@ class PlayerScreenState extends State<PlayerScreen>
                     });
                   },
 
-                  color: isShuffled ? Colors.black : Colors.black38,
+                  color: isShuffled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.tertiary,
                   icon: Icon(Icons.shuffle, size: 25),
                 ),
                 IconButton(
@@ -112,8 +104,8 @@ class PlayerScreenState extends State<PlayerScreen>
                     });
                   },
                   color: repeatCycle != PlayCycle.noRepeat
-                      ? Colors.black
-                      : Colors.black38,
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.tertiary,
                   icon: Icon(
                     repeatCycle == PlayCycle.repeatOne
                         ? Icons.repeat_one

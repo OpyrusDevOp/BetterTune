@@ -44,10 +44,7 @@ class SongTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${song.artist} • ${song.album}',
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -57,10 +54,7 @@ class SongTile extends StatelessWidget {
 
           // More Options
           IconButton(
-            icon: Icon(
-              Icons.more_vert,
-              color: Colors.black.withValues(alpha: 0.6),
-            ),
+            icon: Icon(Icons.more_vert),
             onPressed: () => _showOptions(context),
           ),
         ],
