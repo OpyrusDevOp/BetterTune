@@ -61,10 +61,43 @@ class SongTile extends StatelessWidget {
               Icons.more_vert,
               color: Colors.black.withValues(alpha: 0.6),
             ),
-            onPressed: () {},
+            onPressed: () => _showOptions(context),
           ),
         ],
       ),
     ),
   );
+
+  void _showOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.play_arrow),
+                title: const Text('Play'),
+                onTap: () async {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.shuffle),
+                title: const Text('Shuffle'),
+                onTap: () async {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.queue_music),
+                title: const Text('Add to Queue'),
+                onTap: () {},
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

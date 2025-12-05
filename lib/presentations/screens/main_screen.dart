@@ -37,7 +37,10 @@ class MainScreenState extends State<MainScreen> {
         title: Text("Better Tune"),
         actions: [
           IconButton(onPressed: () {}, icon: Icon(Icons.search)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.more_vert)),
+          IconButton(
+            onPressed: () => _showOptions(context),
+            icon: Icon(Icons.more_vert),
+          ),
         ],
       ),
       drawer: Drawer(
@@ -90,6 +93,29 @@ class MainScreenState extends State<MainScreen> {
           child: MiniPlayer(),
         ),
       ),
+    );
+  }
+
+  void _showOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Settings'),
+                onTap: () async {},
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

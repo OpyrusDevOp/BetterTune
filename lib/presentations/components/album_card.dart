@@ -64,7 +64,6 @@ class AlbumCard extends StatelessWidget {
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A2332),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -74,7 +73,7 @@ class AlbumCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.play_arrow, color: Colors.white),
+                leading: const Icon(Icons.play_arrow),
                 title: const Text('Play'),
                 onTap: () async {},
               ),

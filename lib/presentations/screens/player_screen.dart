@@ -1,3 +1,4 @@
+import 'package:bettertune/models/enums.dart';
 import 'package:flutter/material.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -7,7 +8,12 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => PlayerScreenState();
 }
 
-class PlayerScreenState extends State<PlayerScreen> {
+class PlayerScreenState extends State<PlayerScreen>
+    with SingleTickerProviderStateMixin {
+  bool isplaying = true;
+  bool isShuffled = false;
+  PlayCycle repeatCycle = PlayCycle.noRepeat;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,7 +70,13 @@ class PlayerScreenState extends State<PlayerScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    setState(() {
+                      isShuffled = !isShuffled;
+                    });
+                  },
+
+                  color: isShuffled ? Colors.black : Colors.black38,
                   icon: Icon(Icons.shuffle, size: 25),
                 ),
                 IconButton(
@@ -72,16 +84,42 @@ class PlayerScreenState extends State<PlayerScreen> {
                   icon: Icon(Icons.skip_previous, size: 35),
                 ),
                 IconButton(
-                  onPressed: () {},
-                  icon: Icon(Icons.play_arrow, size: 35),
+                  onPressed: () {
+                    setState(() {
+                      isplaying = !isplaying;
+                    });
+                  },
+                  icon: Icon(
+                    isplaying ? Icons.pause : Icons.play_arrow,
+                    size: 35,
+                  ),
                 ),
                 IconButton(
                   onPressed: () {},
                   icon: Icon(Icons.skip_next, size: 35),
                 ),
                 IconButton(
-                  onPressed: () {},
-                  icon: Icon(Icons.repeat, size: 25),
+                  onPressed: () {
+                    setState(() {
+                      switch (repeatCycle) {
+                        case PlayCycle.noRepeat:
+                          repeatCycle = PlayCycle.repeatAll;
+                        case PlayCycle.repeatAll:
+                          repeatCycle = PlayCycle.repeatOne;
+                        default:
+                          repeatCycle = PlayCycle.noRepeat;
+                      }
+                    });
+                  },
+                  color: repeatCycle != PlayCycle.noRepeat
+                      ? Colors.black
+                      : Colors.black38,
+                  icon: Icon(
+                    repeatCycle == PlayCycle.repeatOne
+                        ? Icons.repeat_one
+                        : Icons.repeat,
+                    size: 25,
+                  ),
                 ),
               ],
             ),
