@@ -1,5 +1,6 @@
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class SongsPage extends StatefulWidget {
@@ -10,6 +11,8 @@ class SongsPage extends StatefulWidget {
 }
 
 class _SongsPageStateSongsPage extends State<SongsPage> {
+  bool selectionMode = false;
+
   final songs = List<Song>.generate(
     20,
     (index) => Song(
@@ -20,15 +23,66 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
       isFavorite: false,
     ),
   );
+
+  Set<Song> selectedSongs = {};
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(5.0),
-      child: ListView.builder(
-        itemCount: songs.length,
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, result) {
+        if (didPop) {
+          return;
+        }
+        if (selectedSongs.isNotEmpty) {
+          setState(() {
+            selectedSongs.clear();
+            selectionMode = false;
+          });
 
-        itemBuilder: (context, index) => SongTile(song: songs[index]),
+          return;
+        }
+        if (context.mounted) Navigator.pop(context);
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(5.0),
+        child: ListView.builder(
+          itemCount: songs.length,
+          itemBuilder: (context, index) {
+            var song = songs[index];
+            var isSelected = selectedSongs.contains(song);
+            return SongTile(
+              song: song,
+              isSelect: isSelected,
+              onPress: () => onSongClick(song),
+              onSelection: () => onSongSelection(song),
+              selectionMode: selectionMode,
+            );
+          },
+        ),
       ),
     );
+  }
+
+  void onSongClick(Song song) {}
+
+  void onSongSelection(Song song) {
+    if (selectionMode == false) {
+      selectedSongs.clear();
+      setState(() {
+        selectionMode = true;
+      });
+    }
+
+    setState(
+      () => selectedSongs.contains(song)
+          ? selectedSongs.remove(song)
+          : selectedSongs.add(song),
+    );
+
+    if (kDebugMode) {
+      print("Select ${song.name}");
+      print("Selection count : ${selectedSongs.length}");
+    }
   }
 }

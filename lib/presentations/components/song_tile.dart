@@ -3,14 +3,29 @@ import 'package:flutter/material.dart';
 
 class SongTile extends StatelessWidget {
   final Song song;
-  const SongTile({super.key, required this.song});
+  final bool selectionMode;
+  final bool isSelect;
+  final VoidCallback onSelection;
+  final VoidCallback onPress;
+  const SongTile({
+    super.key,
+    required this.song,
+    required this.onPress,
+    required this.onSelection,
+    required this.isSelect,
+    this.selectionMode = false,
+  });
 
   @override
   Widget build(BuildContext context) => InkWell(
+    onTap: selectionMode ? onSelection : onPress,
+    onLongPress: selectionMode ? null : onSelection,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
+          if (selectionMode)
+            Checkbox(value: isSelect, tristate: true, onChanged: null),
           // Album Art
           ClipRRect(
             borderRadius: BorderRadius.circular(8),

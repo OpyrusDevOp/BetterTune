@@ -61,6 +61,17 @@ final darkTheme = ThemeData(
     inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
     thumbColor: Colors.white,
   ),
+  checkboxTheme: CheckboxThemeData(
+    fillColor: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+      const Set<WidgetState> interactiveStates = <WidgetState>{
+        WidgetState.selected,
+      };
+      if (states.any(interactiveStates.contains)) {
+        return primaryBlue;
+      }
+      return Colors.transparent;
+    }),
+  ),
 );
 
 final lightTheme = ThemeData(
@@ -112,5 +123,16 @@ final lightTheme = ThemeData(
     activeTrackColor: Colors.black87,
     inactiveTrackColor: Colors.black87.withValues(alpha: 0.2),
     thumbColor: Colors.black87,
+  ),
+  checkboxTheme: CheckboxThemeData(
+    fillColor: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+      const Set<WidgetState> interactiveStates = <WidgetState>{
+        WidgetState.selected,
+      };
+      if (states.any(interactiveStates.contains)) {
+        return primaryBlue;
+      }
+      return Colors.transparent;
+    }),
   ),
 );

@@ -24,4 +24,14 @@ class Song {
     // required this.imageTags,
     // this.container,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (other is Song) return other.id == id;
+
+    return false;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
