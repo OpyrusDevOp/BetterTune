@@ -68,7 +68,7 @@ class PlayerScreenState extends State<PlayerScreen>
 
                   color: isShuffled
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.tertiary,
+                      : Colors.grey,
                   icon: Icon(Icons.shuffle, size: 25),
                 ),
                 IconButton(
@@ -105,7 +105,7 @@ class PlayerScreenState extends State<PlayerScreen>
                   },
                   color: repeatCycle != PlayCycle.noRepeat
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.tertiary,
+                      : Colors.grey,
                   icon: Icon(
                     repeatCycle == PlayCycle.repeatOne
                         ? Icons.repeat_one

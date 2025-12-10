@@ -25,7 +25,7 @@ class MiniPlayerState extends State<MiniPlayer> {
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => InkWell(
     onTap: openPlayer,
     child: Row(
       children: [

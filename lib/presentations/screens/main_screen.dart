@@ -34,6 +34,7 @@ class MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         title: Text("Better Tune"),
         actions: [
           IconButton(onPressed: () {}, icon: Icon(Icons.search)),
@@ -84,7 +85,7 @@ class MainScreenState extends State<MainScreen> {
         transformAlignment: AlignmentGeometry.topLeft,
         alignment: AlignmentGeometry.center,
         decoration: BoxDecoration(
-          color: Theme.of(context).splashColor.withValues(alpha: 255),
+          color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadiusGeometry.circular(20),
           // backgroundBlendMode: BlendMode.darken,
         ),

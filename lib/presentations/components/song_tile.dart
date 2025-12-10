@@ -17,65 +17,114 @@ class SongTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: selectionMode ? onSelection : onPress,
-    onLongPress: selectionMode ? null : onSelection,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        children: [
-          if (selectionMode)
-            Checkbox(value: isSelect, tristate: true, onChanged: null),
-          // Album Art
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 56,
-              height: 56,
-              color: Colors.grey[800],
-              child: const Icon(
-                Icons.music_note,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-          // Song Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  song.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: InkWell(
+        onTap: selectionMode ? onSelection : onPress,
+        onLongPress: selectionMode ? null : onSelection,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelect
+                ? colorScheme.primaryContainer.withAlpha(50)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelect
+                ? Border.all(color: colorScheme.primary, width: 1.5)
+                : Border.all(color: Colors.transparent, width: 1.5),
+          ),
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              if (selectionMode) ...[
+                Checkbox(
+                  value: isSelect,
+                  onChanged: (v) => onSelection(),
+                  activeColor: colorScheme.primary,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${song.artist} • ${song.album}',
-                  style: TextStyle(fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                const SizedBox(width: 8),
               ],
-            ),
-          ),
 
-          // More Options
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () => _showOptions(context),
+              // Album Art
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary.withAlpha(100),
+                      colorScheme.primaryContainer,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(30),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.music_note,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Song Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      song.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${song.artist} • ${song.album}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withAlpha(180),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              // More Options
+              if (!selectionMode)
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => _showOptions(context),
+                  splashRadius: 20,
+                ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   void _showOptions(BuildContext context) {
     showModalBottomSheet(

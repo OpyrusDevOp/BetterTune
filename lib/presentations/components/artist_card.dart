@@ -20,42 +20,113 @@ class ArtistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: selectionMode ? onSelection : onPress,
-      onLongPress: selectionMode ? null : onSelection,
-      borderRadius: BorderRadius.circular(12),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: InkWell(
+        onTap: selectionMode ? onSelection : onPress,
+        onLongPress: selectionMode ? null : onSelection,
+        borderRadius: BorderRadius.circular(100), // Circular touch area roughly
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
               children: [
-                Expanded(
-                  child: CircleAvatar(
-                    radius: 80,
-                    child: Icon(Icons.person, size: 40),
+                // Circular Avatar Container
+                Container(
+                  width: 120, // Explicit size for consistency
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.cardTheme.color,
+                    border: isSelect
+                        ? Border.all(color: colorScheme.primary, width: 3)
+                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(40),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.secondaryContainer,
+                        colorScheme.primaryContainer,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: 50,
+                    color: colorScheme.onPrimaryContainer,
                   ),
                 ),
-                Text(artist.name, style: TextTheme.of(context).titleLarge),
+
+                // Selection / Menu Overlay
+                if (selectionMode)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.scaffoldBackgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Checkbox(
+                        value: isSelect,
+                        onChanged: (v) => onSelection(),
+                        shape: const CircleBorder(),
+                        activeColor: colorScheme.primary,
+                      ),
+                    ),
+                  )
+                else
+                  Positioned(
+                    right: 0,
+                    bottom: 10,
+                    child: Material(
+                      color: theme.colorScheme.surfaceContainer,
+                      elevation: 4,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => _showOptions(context),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6.0),
+                          child: Icon(
+                            Icons.more_vert,
+                            size: 18,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-          ),
-          if (selectionMode)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Checkbox(value: isSelect, onChanged: (v) => onSelection()),
-            ),
-          if (!selectionMode)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () => _showOptions(context),
+            const SizedBox(height: 12),
+
+            // Name
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                artist.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
