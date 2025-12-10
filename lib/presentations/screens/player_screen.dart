@@ -18,6 +18,7 @@ class PlayerScreenState extends State<PlayerScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        forceMaterialTransparency: true,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: Icon(Icons.keyboard_arrow_down, size: 40),

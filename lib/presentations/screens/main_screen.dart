@@ -36,6 +36,7 @@ class MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: Text("Better Tune"),
+        forceMaterialTransparency: true,
         actions: [
           IconButton(onPressed: () {}, icon: Icon(Icons.search)),
           IconButton(

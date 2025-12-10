@@ -1,5 +1,7 @@
 import 'package:bettertune/models/artist.dart';
 import 'package:bettertune/presentations/components/artist_card.dart';
+import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
+import 'package:bettertune/presentations/pages/details/artist_details_page.dart';
 import 'package:flutter/material.dart';
 
 class ArtistsPage extends StatefulWidget {
@@ -33,22 +35,47 @@ class ArtistsPageState extends State<ArtistsPage> {
         }
         if (context.mounted) Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.all(5.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          children: List.generate(artists.length, (index) {
-            final artist = artists[index];
-            return ArtistCard(
-              artist: artist,
-              selectionMode: selectionMode,
-              isSelect: selectedArtists.contains(artist),
-              onSelection: () => onArtistSelection(artist),
-              onPress: () {},
-            );
-          }),
-        ),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(5.0),
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              padding: const EdgeInsets.only(bottom: 100),
+              children: List.generate(artists.length, (index) {
+                final artist = artists[index];
+                return ArtistCard(
+                  artist: artist,
+                  selectionMode: selectionMode,
+                  isSelect: selectedArtists.contains(artist),
+                  onSelection: () => onArtistSelection(artist),
+                  onPress: () {
+                    if (selectionMode) {
+                      onArtistSelection(artist);
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ArtistDetailsPage(artist: artist),
+                        ),
+                      );
+                    }
+                  },
+                );
+              }),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SelectionBottomBar(
+              selectionCount: selectedArtists.length,
+              onPlay: () => print("Play Selected Artists"),
+              onAddToPlaylist: () => print("Add Selected Artists to Playlist"),
+            ),
+          ),
+        ],
       ),
     );
   }

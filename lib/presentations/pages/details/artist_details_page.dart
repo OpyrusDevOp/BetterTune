@@ -1,0 +1,155 @@
+import 'package:bettertune/models/artist.dart';
+import 'package:bettertune/models/song.dart';
+import 'package:bettertune/presentations/components/global_action_buttons.dart';
+import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
+import 'package:bettertune/presentations/components/song_tile.dart';
+import 'package:flutter/material.dart';
+
+class ArtistDetailsPage extends StatefulWidget {
+  final Artist artist;
+
+  const ArtistDetailsPage({super.key, required this.artist});
+
+  @override
+  State<ArtistDetailsPage> createState() => _ArtistDetailsPageState();
+}
+
+class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
+  // Mock Data: Map of Album Name -> List of Songs
+  late Map<String, List<Song>> albums;
+  bool selectionMode = false;
+  Set<Song> selectedSongs = {};
+
+  @override
+  void initState() {
+    super.initState();
+    albums = {
+      "Album One": List.generate(
+        3,
+        (i) => Song(
+          id: "a1_$i",
+          name: "Song $i",
+          album: "Album One",
+          artist: widget.artist.name,
+          isFavorite: false,
+        ),
+      ),
+      "Album Two": List.generate(
+        4,
+        (i) => Song(
+          id: "a2_$i",
+          name: "Track $i",
+          album: "Album Two",
+          artist: widget.artist.name,
+          isFavorite: false,
+        ),
+      ),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 250,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(widget.artist.name),
+                  centerTitle: true,
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(color: Theme.of(context).primaryColorDark),
+                      Center(
+                        child: Icon(
+                          Icons.person,
+                          size: 80,
+                          color: Colors.white30,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: GlobalActionButtons(
+                  onPlayAll: () => print("Play All Artist"),
+                  onShuffle: () => print("Shuffle Artist"),
+                  onAddToPlaylist: () => print("Add Artist to Playlist"),
+                ),
+              ),
+              // Grouped List
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final albumName = albums.keys.elementAt(index);
+                  final albumSongs = albums[albumName]!;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                        child: Text(
+                          albumName,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: Theme.of(context).primaryColor),
+                        ),
+                      ),
+                      ...albumSongs.map((song) {
+                        final isSelected = selectedSongs.contains(song);
+                        return SongTile(
+                          song: song,
+                          isSelect: isSelected,
+                          selectionMode: selectionMode,
+                          onSelection: () => onSongSelection(song),
+                          onPress: () {
+                            if (selectionMode) {
+                              onSongSelection(song);
+                            } else {
+                              print("Play ${song.name}");
+                            }
+                          },
+                        );
+                      }),
+                    ],
+                  );
+                }, childCount: albums.length),
+              ),
+              SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+            ],
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SelectionBottomBar(
+              selectionCount: selectedSongs.length,
+              onPlay: () => print("Play Selected"),
+              onAddToPlaylist: () => print("Add Selected to Playlist"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void onSongSelection(Song song) {
+    if (!selectionMode) {
+      setState(() => selectionMode = true);
+    }
+
+    setState(() {
+      if (selectedSongs.contains(song)) {
+        selectedSongs.remove(song);
+      } else {
+        selectedSongs.add(song);
+      }
+
+      if (selectedSongs.isEmpty) {
+        selectionMode = false;
+      }
+    });
+  }
+}

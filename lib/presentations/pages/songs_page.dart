@@ -1,5 +1,6 @@
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
+import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -44,22 +45,37 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
         }
         if (context.mounted) Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.all(5.0),
-        child: ListView.builder(
-          itemCount: songs.length,
-          itemBuilder: (context, index) {
-            var song = songs[index];
-            var isSelected = selectedSongs.contains(song);
-            return SongTile(
-              song: song,
-              isSelect: isSelected,
-              onPress: () => onSongClick(song),
-              onSelection: () => onSongSelection(song),
-              selectionMode: selectionMode,
-            );
-          },
-        ),
+
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(5.0),
+            child: ListView.builder(
+              itemCount: songs.length,
+              // Add bottom padding to avoid obstruction by bottom bar
+              padding: const EdgeInsets.only(bottom: 100),
+              itemBuilder: (context, index) {
+                var song = songs[index];
+                var isSelected = selectedSongs.contains(song);
+                return SongTile(
+                  song: song,
+                  isSelect: isSelected,
+                  onPress: () => onSongClick(song),
+                  onSelection: () => onSongSelection(song),
+                  selectionMode: selectionMode,
+                );
+              },
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SelectionBottomBar(
+              selectionCount: selectedSongs.length,
+              onPlay: () => print("Play Selected Songs"),
+              onAddToPlaylist: () => print("Add Selected to Playlist"),
+            ),
+          ),
+        ],
       ),
     );
   }
