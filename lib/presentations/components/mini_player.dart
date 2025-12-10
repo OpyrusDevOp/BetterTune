@@ -40,12 +40,12 @@ class MiniPlayerState extends State<MiniPlayer> {
             children: [
               Text(
                 "Solo",
-                style: TextStyle(color: Colors.white),
+                // style: TextStyle(color: Colors.white),
                 textWidthBasis: TextWidthBasis.parent,
               ),
               Text(
                 "Future",
-                style: TextStyle(color: Colors.white),
+                // style: TextStyle(color: Colors.white),
                 textWidthBasis: TextWidthBasis.parent,
               ),
             ],
@@ -54,17 +54,17 @@ class MiniPlayerState extends State<MiniPlayer> {
         IconButton(
           onPressed: () {},
           icon: Icon(Icons.skip_previous),
-          color: Colors.white,
+          // color: Colors.white,
         ),
         IconButton(
           onPressed: () {},
           icon: Icon(Icons.play_arrow),
-          color: Colors.white,
+          // color: Colors.white,
         ),
         IconButton(
           onPressed: () {},
           icon: Icon(Icons.skip_next),
-          color: Colors.white,
+          // color: Colors.white,
         ),
       ],
     ),

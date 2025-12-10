@@ -79,14 +79,14 @@ class MainScreenState extends State<MainScreen> {
       body: pages[currentPage],
       bottomNavigationBar: Container(
         height: 70,
-        padding: EdgeInsets.all(10),
-        margin: EdgeInsets.all(10),
+        padding: EdgeInsets.all(15),
+        margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
         transformAlignment: AlignmentGeometry.topLeft,
         alignment: AlignmentGeometry.center,
         decoration: BoxDecoration(
-          color: Colors.black87,
+          color: Theme.of(context).splashColor.withValues(alpha: 255),
           borderRadius: BorderRadiusGeometry.circular(20),
-          backgroundBlendMode: BlendMode.darken,
+          // backgroundBlendMode: BlendMode.darken,
         ),
         child: Container(
           alignment: AlignmentGeometry.topLeft,

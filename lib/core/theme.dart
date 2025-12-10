@@ -50,7 +50,7 @@ final darkTheme = ThemeData(
   // Text Selection Handles (for better contrast)
   textSelectionTheme: TextSelectionThemeData(
     cursorColor: primaryBlue,
-    selectionColor: primaryBlue.withOpacity(0.4),
+    selectionColor: primaryBlue.withValues(alpha: 0.4),
     selectionHandleColor: primaryBlue,
   ),
   sliderTheme: SliderThemeData(

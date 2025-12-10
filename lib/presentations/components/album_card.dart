@@ -3,59 +3,97 @@ import 'package:flutter/material.dart';
 import '../../models/album.dart';
 
 class AlbumCard extends StatelessWidget {
+  final bool selectionMode;
+  final bool isSelect;
+  final VoidCallback onSelection;
+  final VoidCallback onPress;
   final Album album;
 
-  const AlbumCard({super.key, required this.album});
+  const AlbumCard({
+    super.key,
+    required this.album,
+    required this.selectionMode,
+    required this.isSelect,
+    required this.onSelection,
+    required this.onPress,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
-      onLongPress: () {
-        _showOptions(context);
-      },
+      onTap: selectionMode ? onSelection : onPress,
+      onLongPress: selectionMode ? null : onSelection,
       borderRadius: BorderRadius.circular(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Album Cover
-          Expanded(
-            child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  color: Colors.pink.shade200,
-                  child: const Center(
-                    child: Icon(Icons.album, size: 60, color: Colors.white54),
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Album Cover
+                Expanded(
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        color: Colors.pink.shade200,
+                        child: const Center(
+                          child: Icon(
+                            Icons.album,
+                            size: 60,
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // Album Title
+                Center(
+                  child: Text(
+                    album.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                // Artist Name
+                Center(
+                  child: Text(
+                    album.artist,
+                    style: TextStyle(fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (selectionMode)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Checkbox(value: isSelect, onChanged: (v) => onSelection()),
+            ),
+          if (!selectionMode)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: () => _showOptions(context),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // Album Title
-          Center(
-            child: Text(
-              album.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Artist Name
-          Center(
-            child: Text(
-              album.artist,
-              style: TextStyle(fontSize: 14),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
         ],
       ),
     );
