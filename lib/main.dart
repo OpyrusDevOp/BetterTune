@@ -1,6 +1,7 @@
 import 'package:bettertune/core/theme.dart';
 import 'package:bettertune/services/auth_service.dart';
 import 'package:bettertune/presentations/screens/main_screen.dart';
+import 'package:bettertune/presentations/screens/player_screen.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
       home: AuthService().isLoggedIn
           ? SafeArea(child: MainScreen())
           : OnboardingScreen(),
+      routes: {'/player': (context) => const PlayerScreen()},
     );
   }
 }

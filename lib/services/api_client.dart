@@ -29,6 +29,8 @@ class ApiClient {
     userId = null;
   }
 
+  Map<String, String> get authHeaders => _headers;
+
   Map<String, String> get _headers {
     final headers = {
       'Accept': 'application/json',

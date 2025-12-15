@@ -3,6 +3,7 @@ import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 import 'package:flutter/material.dart';
 
 class SongsPage extends StatefulWidget {
@@ -171,7 +172,16 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
   void onSongClick(Song song) {
     // Open Player
     print("Playing ${song.name}");
-    Navigator.of(context).pushNamed('/player'); // Start player
+    if (selectionMode) {
+      onSongSelection(song);
+    } else {
+      _playAndOpenPlayer(song);
+    }
+  }
+
+  void _playAndOpenPlayer(Song song) {
+    AudioPlayerService().playSong(song);
+    Navigator.pushNamed(context, '/player');
   }
 
   void onSongSelection(Song song) {
@@ -195,11 +205,11 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.play_arrow),
-                title: Text("Play Next"),
+                leading: const Icon(Icons.play_arrow),
+                title: const Text("Play"),
                 onTap: () {
                   Navigator.pop(context);
-                  print("Play Next: ${song.name}");
+                  _playAndOpenPlayer(song);
                 },
               ),
               ListTile(

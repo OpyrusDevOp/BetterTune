@@ -5,6 +5,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// dependencies {
+//     def exoplayer_version = "...specify-version-here...."
+//     implementation "com.google.android.exoplayer:exoplayer-core:$exoplayer_version"
+//     implementation "com.google.android.exoplayer:exoplayer-dash:$exoplayer_version"
+//     implementation "com.google.android.exoplayer:exoplayer-hls:$exoplayer_version"
+//     implementation "com.google.android.exoplayer:exoplayer-smoothstreaming:$exoplayer_version"
+// }
+
 android {
     namespace = "com.example.bettertune"
     compileSdk = flutter.compileSdkVersion
