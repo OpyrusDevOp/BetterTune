@@ -27,46 +27,49 @@ class MiniPlayerState extends State<MiniPlayer> {
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: openPlayer,
-    child: Row(
-      children: [
-        CircleAvatar(child: Icon(Icons.music_note)),
-        const SizedBox(width: 10),
-        Expanded(
-          flex: 20,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Text(
-                "Solo",
-                // style: TextStyle(color: Colors.white),
-                textWidthBasis: TextWidthBasis.parent,
-              ),
-              Text(
-                "Future",
-                // style: TextStyle(color: Colors.white),
-                textWidthBasis: TextWidthBasis.parent,
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Row(
+        children: [
+          CircleAvatar(child: Icon(Icons.music_note)),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 20,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Text(
+                  "Solo",
+                  // style: TextStyle(color: Colors.white),
+                  textWidthBasis: TextWidthBasis.parent,
+                ),
+                Text(
+                  "Future",
+                  // style: TextStyle(color: Colors.white),
+                  textWidthBasis: TextWidthBasis.parent,
+                ),
+              ],
+            ),
           ),
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.skip_previous),
-          // color: Colors.white,
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.play_arrow),
-          // color: Colors.white,
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.skip_next),
-          // color: Colors.white,
-        ),
-      ],
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.skip_previous),
+            // color: Colors.white,
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.play_arrow),
+            // color: Colors.white,
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.skip_next),
+            // color: Colors.white,
+          ),
+        ],
+      ),
     ),
   );
 

@@ -7,6 +7,7 @@ class SongTile extends StatelessWidget {
   final bool isSelect;
   final VoidCallback onSelection;
   final VoidCallback onPress;
+  final Widget? trailing;
   const SongTile({
     super.key,
     required this.song,
@@ -14,6 +15,7 @@ class SongTile extends StatelessWidget {
     required this.onSelection,
     required this.isSelect,
     this.selectionMode = false,
+    this.trailing,
   });
 
   @override
@@ -109,53 +111,12 @@ class SongTile extends StatelessWidget {
                 ),
               ),
 
-              // More Options
-              if (!selectionMode)
-                IconButton(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () => _showOptions(context),
-                  splashRadius: 20,
-                ),
+              // Trailing Widget (Checkbox or Options)
+              if (trailing != null) trailing!,
             ],
           ),
         ),
       ),
-    );
-  }
-
-  void _showOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.play_arrow),
-                title: const Text('Play'),
-                onTap: () async {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.shuffle),
-                title: const Text('Shuffle'),
-                onTap: () async {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.queue_music),
-                title: const Text('Add to Queue'),
-                onTap: () {},
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

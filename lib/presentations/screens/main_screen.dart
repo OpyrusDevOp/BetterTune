@@ -5,6 +5,7 @@ import 'package:bettertune/presentations/pages/favourites_page.dart';
 import 'package:bettertune/presentations/pages/playlists_page.dart';
 import 'package:bettertune/presentations/pages/songs_page.dart';
 
+import 'package:bettertune/presentations/delegates/global_search_delegate.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -23,11 +24,11 @@ class MainScreenState extends State<MainScreen> {
     PlaylistsPage(),
     FavouritesPage(),
   ];
-  void drawerOptionClick(int pageIndex) {
+
+  void _onTabTapped(int index) {
     setState(() {
-      currentPage = pageIndex;
+      currentPage = index;
     });
-    Navigator.pop(context);
   }
 
   @override
@@ -38,62 +39,42 @@ class MainScreenState extends State<MainScreen> {
         title: Text("Better Tune"),
         forceMaterialTransparency: true,
         actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.search)),
+          IconButton(
+            onPressed: () {
+              showSearch(context: context, delegate: GlobalSearchDelegate());
+            },
+            icon: Icon(Icons.search),
+          ),
           IconButton(
             onPressed: () => _showOptions(context),
             icon: Icon(Icons.more_vert),
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(child: Center(child: Text("Better Tune"))),
-            ListTile(
-              title: Text("Songs"),
-              selected: currentPage == 0,
-              onTap: () => drawerOptionClick(0),
-            ),
-            ListTile(
-              title: Text("Albums"),
-              selected: currentPage == 1,
-              onTap: () => drawerOptionClick(1),
-            ),
-            ListTile(
-              title: Text("Artists"),
-              selected: currentPage == 2,
-              onTap: () => drawerOptionClick(2),
-            ),
-            ListTile(
-              title: Text("Playlists"),
-              selected: currentPage == 3,
-              onTap: () => drawerOptionClick(3),
-            ),
-            ListTile(
-              title: Text("Favourites"),
-              selected: currentPage == 4,
-              onTap: () => drawerOptionClick(4),
-            ),
-          ],
-        ),
+      body: Column(
+        children: [
+          // Expanded content page
+          Expanded(child: pages[currentPage]),
+          // Persistent Mini Player above the nav bar
+          MiniPlayer(),
+        ],
       ),
-      body: pages[currentPage],
-      bottomNavigationBar: Container(
-        height: 70,
-        padding: EdgeInsets.all(15),
-        margin: EdgeInsets.fromLTRB(10, 0, 10, 10),
-        transformAlignment: AlignmentGeometry.topLeft,
-        alignment: AlignmentGeometry.center,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadiusGeometry.circular(20),
-          // backgroundBlendMode: BlendMode.darken,
-        ),
-        child: Container(
-          alignment: AlignmentGeometry.topLeft,
-          child: MiniPlayer(),
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentPage,
+        onTap: _onTabTapped,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.music_note), label: "Songs"),
+          BottomNavigationBarItem(icon: Icon(Icons.album), label: "Albums"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Artists"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.playlist_play),
+            label: "Playlists",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Favorites",
+          ),
+        ],
       ),
     );
   }
