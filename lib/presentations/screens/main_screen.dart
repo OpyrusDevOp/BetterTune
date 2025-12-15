@@ -6,7 +6,7 @@ import 'package:bettertune/presentations/pages/playlists_page.dart';
 import 'package:bettertune/presentations/pages/songs_page.dart';
 
 import 'package:bettertune/presentations/delegates/global_search_delegate.dart';
-import 'package:bettertune/data/auth_repository.dart';
+import 'package:bettertune/services/auth_service.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -102,7 +102,7 @@ class MainScreenState extends State<MainScreen> {
                 title: const Text('Sign Out'),
                 onTap: () async {
                   Navigator.pop(context); // Close bottom sheet
-                  await AuthRepository().logout();
+                  await AuthService().logout();
                   if (context.mounted) {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(

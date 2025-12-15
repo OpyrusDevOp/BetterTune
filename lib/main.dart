@@ -1,10 +1,12 @@
 import 'package:bettertune/core/theme.dart';
-import 'package:bettertune/data/auth_repository.dart';
+import 'package:bettertune/services/auth_service.dart';
 import 'package:bettertune/presentations/screens/main_screen.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthService().init();
   runApp(const MyApp());
 }
 
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
-      home: AuthRepository().isLoggedIn
+      home: AuthService().isLoggedIn
           ? SafeArea(child: MainScreen())
           : OnboardingScreen(),
     );

@@ -264,22 +264,6 @@ class PlayerScreenState extends State<PlayerScreen>
     });
   }
 
-  // --- Queue Management Helpers ---
-
-  void _addToQueueNext(Song song) {
-    // Determine current index (mocked as 0 for now or find `currentSong`)
-    // Since we don't have real player state, we'll just insert at top of queue
-    setState(() {
-      queue.insert(0, song);
-    });
-  }
-
-  void _addToQueueLast(Song song) {
-    setState(() {
-      queue.add(song);
-    });
-  }
-
   void _shuffleQueue() {
     setState(() {
       if (isShuffled) {

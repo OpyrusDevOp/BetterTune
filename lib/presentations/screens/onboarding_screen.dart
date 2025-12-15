@@ -1,4 +1,4 @@
-import 'package:bettertune/data/auth_repository.dart';
+import 'package:bettertune/services/auth_service.dart';
 import 'package:bettertune/presentations/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +23,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _isLoading = true;
     });
 
-    final success = await AuthRepository().login(
+    final success = await AuthService().login(
       _hostController.text,
       _usernameController.text,
       _passwordController.text,
