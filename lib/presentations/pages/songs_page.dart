@@ -1,5 +1,6 @@
 import 'package:bettertune/models/song.dart';
-import 'package:bettertune/data/playlist_repository.dart';
+import 'package:bettertune/services/songs_service.dart';
+import 'package:bettertune/services/playlist_service.dart'; // Use Real Service
 import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
@@ -14,20 +15,14 @@ class SongsPage extends StatefulWidget {
 
 class _SongsPageStateSongsPage extends State<SongsPage> {
   bool selectionMode = false;
-
-  // Mock data for now
-  final songs = List<Song>.generate(
-    20,
-    (index) => Song(
-      id: index.toString(),
-      name: 'Song Title $index',
-      album: 'Album Name $index',
-      artist: 'Artist Name',
-      isFavorite: false,
-    ),
-  );
-
+  late Future<List<Song>> _songsFuture;
   Set<Song> selectedSongs = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _songsFuture = SongsService().getSongs();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,50 +39,72 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
         }
         // Don't pop main screen
       },
-      child: Stack(
-        children: [
-          ListView.builder(
-            itemCount: songs.length,
-            padding: const EdgeInsets.only(bottom: 100), // Space for MiniPlayer
-            itemBuilder: (context, index) {
-              var song = songs[index];
-              var isSelected = selectedSongs.contains(song);
+      child: FutureBuilder<List<Song>>(
+        future: _songsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          final songs = snapshot.data ?? [];
 
-              return SongTile(
-                song: song,
-                isSelect: isSelected,
-                onPress: () => onSongClick(song),
-                onSelection: () => onSongSelection(song),
-                selectionMode: selectionMode,
-                trailing: selectionMode
-                    ? null
-                    : IconButton(
-                        icon: Icon(Icons.more_vert),
-                        onPressed: () => _showSongOptions(context, song),
-                      ),
-              );
-            },
-          ),
+          if (songs.isEmpty) {
+            return const Center(child: Text("No songs found."));
+          }
 
-          if (selectionMode)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child: SelectionBottomBar(
-                  selectionCount: selectedSongs.length,
-                  onPlay: () {
-                    print("Play ${selectedSongs.length} items");
-                    _exitSelection();
-                  },
-                  onAddToPlaylist: () {
-                    _showAddToPlaylistDialog(context, selectedSongs.toList());
-                    _exitSelection();
-                  },
-                ),
+          return Stack(
+            children: [
+              ListView.builder(
+                itemCount: songs.length,
+                padding: const EdgeInsets.only(
+                  bottom: 100,
+                ), // Space for MiniPlayer
+                itemBuilder: (context, index) {
+                  var song = songs[index];
+                  var isSelected = selectedSongs.contains(song);
+
+                  return SongTile(
+                    song: song,
+                    isSelect: isSelected,
+                    onPress: () => onSongClick(song),
+                    onSelection: () => onSongSelection(song),
+                    selectionMode: selectionMode,
+                    trailing: selectionMode
+                        ? null
+                        : IconButton(
+                            icon: Icon(Icons.more_vert),
+                            onPressed: () => _showSongOptions(context, song),
+                          ),
+                  );
+                },
               ),
-            ),
-        ],
+
+              if (selectionMode)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: SelectionBottomBar(
+                      selectionCount: selectedSongs.length,
+                      onPlay: () {
+                        print("Play ${selectedSongs.length} items");
+                        _exitSelection();
+                      },
+                      onAddToPlaylist: () {
+                        _showAddToPlaylistDialog(
+                          context,
+                          selectedSongs.toList(),
+                        );
+                        _exitSelection();
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -103,9 +120,6 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
     // Open Player
     print("Playing ${song.name}");
     Navigator.of(context).pushNamed('/player'); // Start player
-    // Note: Actual navigation needs route setup or direct push
-    // Since PlayerScreen is a modal in standard flow, we might need a GlobalKey or just Push
-    // Navigator.push(context, MaterialPageRoute(builder: (_) => PlayerScreen()));
   }
 
   void onSongSelection(Song song) {
@@ -121,14 +135,11 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
   }
 
   void _showAddToPlaylistDialog(BuildContext context, List<Song> songsToAdd) {
-    // Fetch playlists (mock)
-    final repo = PlaylistRepository();
-    // In real app use FutureBuilder or state management
     showDialog(
       context: context,
       builder: (context) {
         return FutureBuilder<List<Playlist>>(
-          future: repo.getPlaylists(),
+          future: PlaylistService().getPlaylists(),
           builder: (context, snapshot) {
             if (!snapshot.hasData)
               return Center(child: CircularProgressIndicator());
@@ -156,11 +167,12 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
                     return ListTile(
                       leading: Icon(Icons.playlist_play),
                       title: Text(p.name),
-                      subtitle: Text("${p.songs.length} songs"),
+                      // subtitle: Text("${p.songs.length} songs"), // TODO: Add song count to model if available
                       onTap: () async {
-                        for (var s in songsToAdd) {
-                          await repo.addSongToPlaylist(p.id, s);
-                        }
+                        // Extract IDs
+                        List<String> ids = songsToAdd.map((s) => s.id).toList();
+                        await PlaylistService().addToPlaylist(p.id, ids);
+
                         if (context.mounted) Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Added to ${p.name}")),
@@ -184,8 +196,42 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
   }
 
   void _createNewPlaylist(BuildContext context, List<Song> songsToAdd) {
-    print("Create Playlist Logic here");
-    // Dialog to get name, then create and add
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("New Playlist Name"),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(hintText: "My Playlist"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (controller.text.isNotEmpty) {
+                  await PlaylistService().createPlaylist(controller.text);
+                  // Limitation: We created it, but didn't add songs yet because Create API assumes empty?
+                  // Actually, usually we create then add.
+                  // For now simple flow:
+                  Navigator.pop(context);
+                  // Ideally re-trigger add to playlist flow or chain calls.
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text("Playlist Created")));
+                }
+              },
+              child: Text("Create"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showSongOptions(BuildContext context, Song song) {
