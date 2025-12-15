@@ -98,16 +98,41 @@ void _createNewPlaylist(BuildContext context, List<Song> songsToAdd) {
             onPressed: () async {
               if (controller.text.isNotEmpty) {
                 try {
-                  await PlaylistService().createPlaylist(controller.text);
+                  final newId = await PlaylistService().createPlaylist(
+                    controller.text,
+                  );
 
                   if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Playlist Created")),
-                    );
+                    Navigator.pop(context); // Close dialog
 
-                    // Ideally, we'd add songs here too if we got the ID back
-                    // For now, let's just create it and maybe the user will add it again
+                    if (newId != null) {
+                      String message = "Playlist Created";
+                      // If we have songs to add, add them now
+                      if (songsToAdd.isNotEmpty) {
+                        try {
+                          List<String> ids = songsToAdd
+                              .map((s) => s.id)
+                              .toList();
+                          await PlaylistService().addToPlaylist(newId, ids);
+                          message = "Playlist Created & Songs Added";
+                        } catch (e) {
+                          message =
+                              "Playlist Created but failed to add songs: $e";
+                        }
+                      }
+
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(message)));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Failed to create playlist (No ID returned)",
+                          ),
+                        ),
+                      );
+                    }
                   }
                 } catch (e) {
                   debugPrint("Failed to create playlist: $e");

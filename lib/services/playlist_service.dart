@@ -27,10 +27,10 @@ class PlaylistService {
     return [];
   }
 
-  Future<void> createPlaylist(String name) async {
+  Future<String?> createPlaylist(String name) async {
     // API: /Playlists?Name={Name}&UserId={UserId} (POST)
     final client = ApiClient();
-    if (client.userId == null) return;
+    if (client.userId == null) return null;
 
     // Use query parameters to handle special characters in name
     final queryParams = {'Name': name, 'UserId': client.userId};
@@ -43,7 +43,11 @@ class PlaylistService {
     // The safest way is to use Uri to encode query params
     final uri = Uri(path: '/Playlists', queryParameters: queryParams);
 
-    await client.post(uri.toString());
+    final result = await client.post(uri.toString());
+    if (result != null && result['Id'] != null) {
+      return result['Id'];
+    }
+    return null;
   }
 
   Future<void> addToPlaylist(String playlistId, List<String> itemIds) async {
