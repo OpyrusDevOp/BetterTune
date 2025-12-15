@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'package:bettertune/models/song.dart';
-import 'package:bettertune/services/songs_service.dart';
-import 'package:bettertune/services/api_client.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:flutter/material.dart';
+import 'package:bettertune/models/song.dart';
+import 'package:bettertune/services/api_client.dart';
+import 'package:bettertune/services/songs_service.dart'; // For Stream URL
+import 'package:flutter/foundation.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 class AudioPlayerService {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
@@ -21,12 +22,10 @@ class AudioPlayerService {
 
   // State
   // We derive current song from _player.currentIndex and the playlist sequence
-
-  // Getters
+  // Stream for player state
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
   Stream<Duration> get positionStream => _player.positionStream;
   Stream<Duration?> get durationStream => _player.durationStream;
-  Stream<Duration> get bufferedPositionStream => _player.bufferedPositionStream;
   Stream<bool> get shuffleModeEnabledStream => _player.shuffleModeEnabledStream;
   Stream<LoopMode> get loopModeStream => _player.loopModeStream;
 
@@ -36,7 +35,7 @@ class AudioPlayerService {
         final sequence = _player.sequence;
         if (index != null && sequence != null && index < sequence.length) {
           final source = sequence[index] as UriAudioSource;
-          return source.tag as Song?;
+          return _mediaItemToSong(source.tag as MediaItem);
         }
         return null;
       });
@@ -46,21 +45,37 @@ class AudioPlayerService {
     final sequence = _player.sequence;
     if (index != null && sequence != null && index < sequence.length) {
       final source = sequence[index] as UriAudioSource;
-      return source.tag as Song?;
+      return _mediaItemToSong(source.tag as MediaItem);
     }
     return null;
   }
 
   // Stream for the queue (taking shuffle into account)
   // This combines sequenceStream and shuffleModeEnabledStream to give the effective list
-  Stream<List<Song>> get queueStream =>
-      _player.sequenceStateStream.map((state) {
-        if (state == null) return [];
-        final sequence = state.effectiveSequence;
-        return sequence
-            .map((source) => (source as UriAudioSource).tag as Song)
-            .toList();
-      });
+  Stream<List<Song>> get queueStream => _player.sequenceStateStream.map((
+    state,
+  ) {
+    if (state == null) return [];
+    final sequence = state.effectiveSequence;
+    return sequence
+        .map(
+          (source) =>
+              _mediaItemToSong((source as UriAudioSource).tag as MediaItem),
+        )
+        .toList();
+  });
+
+  Song _mediaItemToSong(MediaItem item) {
+    // We store extra data in extras if needed, or map strictly from standard fields
+    return Song(
+      id: item.id,
+      name: item.title,
+      artist: item.artist ?? "Unknown",
+      album: item.album ?? "Unknown",
+      // We can store original song object or other props in extras if needed
+      isFavorite: item.extras?['isFavorite'] ?? false,
+    );
+  }
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
@@ -75,7 +90,24 @@ class AudioPlayerService {
 
       final children = songs.map((song) {
         final url = SongsService().getStreamUrl(song.id);
-        return AudioSource.uri(Uri.parse(url), headers: headers, tag: song);
+        final imageUrl = ApiClient().getImageUrl(
+          song.id,
+          width: 300,
+          height: 300,
+        );
+
+        return AudioSource.uri(
+          Uri.parse(url),
+          headers: headers,
+          tag: MediaItem(
+            id: song.id,
+            title: song.name,
+            artist: song.artist,
+            album: song.album,
+            artUri: Uri.parse(imageUrl),
+            extras: {'isFavorite': song.isFavorite},
+          ),
+        );
       }).toList();
 
       await _player.setAudioSources(children, initialIndex: initialIndex);
@@ -89,10 +121,23 @@ class AudioPlayerService {
     try {
       final headers = ApiClient().authHeaders;
       final url = SongsService().getStreamUrl(song.id);
+      final imageUrl = ApiClient().getImageUrl(
+        song.id,
+        width: 300,
+        height: 300,
+      );
+
       final source = AudioSource.uri(
         Uri.parse(url),
         headers: headers,
-        tag: song,
+        tag: MediaItem(
+          id: song.id,
+          title: song.name,
+          artist: song.artist,
+          album: song.album,
+          artUri: Uri.parse(imageUrl),
+          extras: {'isFavorite': song.isFavorite},
+        ),
       );
 
       final playlist = _player.audioSource as ConcatenatingAudioSource?;

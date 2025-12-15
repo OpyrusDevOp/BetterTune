@@ -4,15 +4,27 @@ import 'package:bettertune/presentations/screens/main_screen.dart';
 import 'package:bettertune/presentations/screens/player_screen.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AuthService().init();
-  runApp(const MyApp());
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+    androidNotificationChannelName: 'Audio playback',
+    androidNotificationOngoing: true,
+  );
+
+  final authService = AuthService();
+  await authService.init();
+  bool isLoggedIn = authService.isLoggedIn;
+
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   // This widget is the root of your application.
   @override
