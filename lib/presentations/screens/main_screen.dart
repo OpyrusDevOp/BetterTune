@@ -6,6 +6,8 @@ import 'package:bettertune/presentations/pages/playlists_page.dart';
 import 'package:bettertune/presentations/pages/songs_page.dart';
 
 import 'package:bettertune/presentations/delegates/global_search_delegate.dart';
+import 'package:bettertune/data/auth_repository.dart';
+import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -94,6 +96,21 @@ class MainScreenState extends State<MainScreen> {
                 leading: const Icon(Icons.settings),
                 title: const Text('Settings'),
                 onTap: () async {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Sign Out'),
+                onTap: () async {
+                  Navigator.pop(context); // Close bottom sheet
+                  await AuthRepository().logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => OnboardingScreen(),
+                      ),
+                    );
+                  }
+                },
               ),
             ],
           ),

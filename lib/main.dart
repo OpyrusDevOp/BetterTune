@@ -1,5 +1,7 @@
 import 'package:bettertune/core/theme.dart';
+import 'package:bettertune/data/auth_repository.dart';
 import 'package:bettertune/presentations/screens/main_screen.dart';
+import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -17,7 +19,9 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
-      home: SafeArea(child: MainScreen()),
+      home: AuthRepository().isLoggedIn
+          ? SafeArea(child: MainScreen())
+          : OnboardingScreen(),
     );
   }
 }
