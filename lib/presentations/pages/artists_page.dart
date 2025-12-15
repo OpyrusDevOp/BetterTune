@@ -3,6 +3,8 @@ import 'package:bettertune/presentations/components/artist_card.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/artist_details_page.dart';
 import 'package:bettertune/services/songs_service.dart';
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
+import 'package:bettertune/models/song.dart';
 import 'package:flutter/material.dart';
 
 class ArtistsPage extends StatefulWidget {
@@ -93,8 +95,23 @@ class ArtistsPageState extends State<ArtistsPage> {
                 child: SelectionBottomBar(
                   selectionCount: selectedArtists.length,
                   onPlay: () => print("Play Selected Artists"),
-                  onAddToPlaylist: () =>
-                      print("Add Selected Artists to Playlist"),
+                  onAddToPlaylist: () async {
+                    List<Song> allSongs = [];
+                    for (var artist in selectedArtists) {
+                      final songs = await SongsService().getSongsByArtist(
+                        artist.id,
+                        artist.name,
+                      );
+                      allSongs.addAll(songs);
+                    }
+                    if (context.mounted) {
+                      showAddToPlaylistDialog(context, allSongs);
+                    }
+                    setState(() {
+                      selectedArtists.clear();
+                      selectionMode = false;
+                    });
+                  },
                 ),
               ),
             ],

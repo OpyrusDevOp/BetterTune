@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart'; // For debugPrint
 import 'package:http/http.dart' as http;
 
 class ApiClient {
@@ -19,6 +20,7 @@ class ApiClient {
     baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
     accessToken = token;
     userId = uid;
+    debugPrint("[ApiClient] Credentials set: $baseUrl, User: $userId");
   }
 
   void clearCredentials() {
@@ -46,40 +48,65 @@ class ApiClient {
   }
 
   Future<dynamic> get(String endpoint) async {
-    if (baseUrl == null) throw Exception("Base URL not set");
+    if (baseUrl == null) {
+      debugPrint("[ApiClient] Error: Base URL not set");
+      throw Exception("Base URL not set");
+    }
 
     final uri = Uri.parse('$baseUrl$endpoint');
-    final response = await http.get(uri, headers: _headers);
+    debugPrint("[ApiClient] GET $uri");
 
-    return _handleResponse(response);
+    try {
+      final response = await http.get(uri, headers: _headers);
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("[ApiClient] GET failed: $e");
+      rethrow;
+    }
   }
 
   Future<dynamic> post(String endpoint, {Object? body}) async {
     if (baseUrl == null) throw Exception("Base URL not set");
 
     final uri = Uri.parse('$baseUrl$endpoint');
-    final response = await http.post(
-      uri,
-      headers: _headers,
-      body: body != null ? jsonEncode(body) : null,
-    );
+    debugPrint("[ApiClient] POST $uri");
+    if (body != null) debugPrint("[ApiClient] Body: $body");
 
-    return _handleResponse(response);
+    try {
+      final response = await http.post(
+        uri,
+        headers: _headers,
+        body: body != null ? jsonEncode(body) : null,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("[ApiClient] POST failed: $e");
+      rethrow;
+    }
   }
 
   Future<dynamic> delete(String endpoint) async {
     if (baseUrl == null) throw Exception("Base URL not set");
 
     final uri = Uri.parse('$baseUrl$endpoint');
-    final response = await http.delete(uri, headers: _headers);
+    debugPrint("[ApiClient] DELETE $uri");
 
-    return _handleResponse(response);
+    try {
+      final response = await http.delete(uri, headers: _headers);
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("[ApiClient] DELETE failed: $e");
+      rethrow;
+    }
   }
 
   dynamic _handleResponse(http.Response response) {
+    debugPrint("[ApiClient] Response: ${response.statusCode}");
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // If content is empty, return null
-      if (response.body.isEmpty) return null;
+      // 204 No Content
+      if (response.statusCode == 204 || response.body.isEmpty) return null;
+
       try {
         return jsonDecode(response.body);
       } catch (e) {
@@ -87,6 +114,7 @@ class ApiClient {
         return response.body;
       }
     } else {
+      debugPrint("[ApiClient] Error Response: ${response.body}");
       throw Exception('API Error: ${response.statusCode} ${response.body}');
     }
   }

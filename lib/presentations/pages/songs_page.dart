@@ -162,13 +162,6 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
     );
   }
 
-  Future<void> _refreshSongs() async {
-    setState(() {
-      _songsFuture = SongsService().getSongs(limit: 500);
-    });
-    await _songsFuture;
-  }
-
   void _exitSelection() {
     setState(() {
       selectedSongs.clear();

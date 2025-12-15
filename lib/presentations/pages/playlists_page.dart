@@ -2,6 +2,8 @@ import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/playlist_details_page.dart';
 import 'package:bettertune/services/playlist_service.dart';
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
+import 'package:bettertune/models/song.dart';
 import 'package:flutter/material.dart';
 
 class PlaylistsPage extends StatefulWidget {
@@ -99,7 +101,22 @@ class PlaylistsPageState extends State<PlaylistsPage> {
                 child: SelectionBottomBar(
                   selectionCount: selectedPlaylists.length,
                   onPlay: () => print("Play Selected Playlists"),
-                  onAddToPlaylist: () => print("Merge Select Playlists"),
+                  onAddToPlaylist: () async {
+                    List<Song> allSongs = [];
+                    for (var playlist in selectedPlaylists) {
+                      final songs = await PlaylistService().getPlaylistItems(
+                        playlist.id,
+                      );
+                      allSongs.addAll(songs);
+                    }
+                    if (context.mounted) {
+                      showAddToPlaylistDialog(context, allSongs);
+                    }
+                    setState(() {
+                      selectedPlaylists.clear();
+                      selectionMode = false;
+                    });
+                  },
                   onDelete: () => print("Delete Selected Playlists"),
                 ),
               ),

@@ -32,7 +32,18 @@ class PlaylistService {
     final client = ApiClient();
     if (client.userId == null) return;
 
-    await client.post('/Playlists?Name=$name&UserId=${client.userId}');
+    // Use query parameters to handle special characters in name
+    final queryParams = {'Name': name, 'UserId': client.userId};
+
+    // Construct URI safely
+    // Note: We need to manually construct string for ApiClient since it expects endpoint string
+    // But better to let ApiClient handle it or construct fully encoded string here.
+    // ApiClient uses Uri.parse('$baseUrl$endpoint'), so we need to pass a string that is safe.
+
+    // The safest way is to use Uri to encode query params
+    final uri = Uri(path: '/Playlists', queryParameters: queryParams);
+
+    await client.post(uri.toString());
   }
 
   Future<void> addToPlaylist(String playlistId, List<String> itemIds) async {
@@ -40,10 +51,14 @@ class PlaylistService {
     final client = ApiClient();
     if (client.userId == null) return;
 
-    final idsParam = itemIds.join(',');
-    await client.post(
-      '/Playlists/$playlistId/Items?Ids=$idsParam&UserId=${client.userId}',
+    final queryParams = {'Ids': itemIds.join(','), 'UserId': client.userId};
+
+    final uri = Uri(
+      path: '/Playlists/$playlistId/Items',
+      queryParameters: queryParams,
     );
+
+    await client.post(uri.toString());
   }
 
   Future<List<Song>> getPlaylistItems(String playlistId) async {

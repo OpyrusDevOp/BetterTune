@@ -2,6 +2,7 @@ import 'package:bettertune/models/artist.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/global_action_buttons.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/services/api_client.dart';
 import 'package:bettertune/services/songs_service.dart';
@@ -82,7 +83,15 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
                 child: GlobalActionButtons(
                   onPlayAll: () => print("Play All Artist"),
                   onShuffle: () => print("Shuffle Artist"),
-                  onAddToPlaylist: () => print("Add Artist to Playlist"),
+                  onAddToPlaylist: () async {
+                    final songs = await SongsService().getSongsByArtist(
+                      widget.artist.id,
+                      widget.artist.name,
+                    );
+                    if (context.mounted) {
+                      showAddToPlaylistDialog(context, songs);
+                    }
+                  },
                 ),
               ),
               // Grouped List
@@ -157,7 +166,13 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
             child: SelectionBottomBar(
               selectionCount: selectedSongs.length,
               onPlay: () => print("Play Selected"),
-              onAddToPlaylist: () => print("Add Selected to Playlist"),
+              onAddToPlaylist: () {
+                showAddToPlaylistDialog(context, selectedSongs.toList());
+                setState(() {
+                  selectedSongs.clear();
+                  selectionMode = false;
+                });
+              },
             ),
           ),
         ],

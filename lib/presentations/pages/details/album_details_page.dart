@@ -5,6 +5,7 @@ import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/services/api_client.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:flutter/material.dart';
 
 class AlbumDetailsPage extends StatefulWidget {
@@ -47,13 +48,6 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
                     fit: StackFit.expand,
                     children: [
                       Container(
-                        child: Center(
-                          child: Icon(
-                            Icons.album,
-                            size: 100,
-                            color: Colors.white24,
-                          ),
-                        ),
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             image: NetworkImage(
@@ -63,6 +57,13 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
                               ),
                             ),
                             fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.album,
+                            size: 100,
+                            color: Colors.white24,
                           ),
                         ),
                       ),
@@ -89,8 +90,13 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
                   onShuffle: () {
                     print("Shuffle Album");
                   },
-                  onAddToPlaylist: () {
-                    print("Add Album to Playlist");
+                  onAddToPlaylist: () async {
+                    if (_songsFuture != null) {
+                      final songs = await _songsFuture!;
+                      if (context.mounted) {
+                        showAddToPlaylistDialog(context, songs);
+                      }
+                    }
                   },
                 ),
               ),
@@ -151,7 +157,13 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
             child: SelectionBottomBar(
               selectionCount: selectedSongs.length,
               onPlay: () => print("Play Selected"),
-              onAddToPlaylist: () => print("Add Selected to Playlist"),
+              onAddToPlaylist: () {
+                showAddToPlaylistDialog(context, selectedSongs.toList());
+                setState(() {
+                  selectedSongs.clear();
+                  selectionMode = false;
+                });
+              },
             ),
           ),
         ],

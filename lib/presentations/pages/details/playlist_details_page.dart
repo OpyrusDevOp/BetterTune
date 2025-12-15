@@ -4,6 +4,7 @@ import 'package:bettertune/presentations/components/global_action_buttons.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/services/playlist_service.dart';
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:flutter/material.dart';
 
 class PlaylistDetailsPage extends StatefulWidget {
@@ -39,7 +40,14 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
               GlobalActionButtons(
                 onPlayAll: () => print("Play Playlist"),
                 onShuffle: () => print("Shuffle Playlist"),
-                onAddToPlaylist: () => print("Add Playlist to another"),
+                onAddToPlaylist: () async {
+                  if (_playlistSongsFuture != null) {
+                    final songs = await _playlistSongsFuture!;
+                    if (context.mounted) {
+                      showAddToPlaylistDialog(context, songs);
+                    }
+                  }
+                },
               ),
               Expanded(
                 child: FutureBuilder<List<Song>>(
@@ -91,7 +99,13 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
             child: SelectionBottomBar(
               selectionCount: selectedSongs.length,
               onPlay: () => print("Play Selected"),
-              onAddToPlaylist: () => print("Add to Playlist"),
+              onAddToPlaylist: () {
+                showAddToPlaylistDialog(context, selectedSongs.toList());
+                setState(() {
+                  selectedSongs.clear();
+                  selectionMode = false;
+                });
+              },
               onDelete: () {
                 // Remove functionality
                 print("Remove from playlist");
