@@ -67,4 +67,32 @@ class SongsService {
     }
     return [];
   }
+
+  /// Get songs for a specific Album
+  Future<List<Song>> getSongsByAlbum(String albumId) async {
+    final client = ApiClient();
+    if (client.userId == null) return [];
+
+    final result = await client.get(
+      '/Users/${client.userId}/Items?ParentId=$albumId&Recursive=true&IncludeItemTypes=Audio&Fields=MediaStreams&SortBy=SortName&SortOrder=Ascending',
+    );
+
+    if (result != null && result['Items'] != null) {
+      return (result['Items'] as List).map<Song>((item) {
+        return Song(
+          id: item['Id'],
+          name: item['Name'],
+          album: item['Album'] ?? 'Unknown Album',
+          artist:
+              item['AlbumArtist'] ??
+              item['Artists'].firstWhere(
+                (_) => true,
+                orElse: () => 'Unknown Artist',
+              ),
+          isFavorite: item['UserData']?['IsFavorite'] ?? false,
+        );
+      }).toList();
+    }
+    return [];
+  }
 }

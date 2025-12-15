@@ -1,3 +1,4 @@
+import 'package:bettertune/services/api_client.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/album.dart';
@@ -58,20 +59,30 @@ class AlbumCard extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(14),
                         ),
-                        gradient: LinearGradient(
-                          colors: [
-                            colorScheme.primaryContainer,
-                            colorScheme.primary.withAlpha(100),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
+                        color: colorScheme.surfaceContainerHighest,
                       ),
-                      child: Center(
-                        child: Icon(
-                          Icons.album_rounded,
-                          size: 64,
-                          color: colorScheme.onPrimaryContainer.withAlpha(150),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(14),
+                        ),
+                        child: Image.network(
+                          ApiClient().getImageUrl(
+                            album.id,
+                            width: 300,
+                            height: 300,
+                          ),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(
+                                Icons.album_rounded,
+                                size: 64,
+                                color: colorScheme.onSurfaceVariant.withAlpha(
+                                  150,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),

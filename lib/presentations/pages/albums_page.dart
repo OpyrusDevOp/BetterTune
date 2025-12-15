@@ -2,6 +2,7 @@ import 'package:bettertune/models/album.dart';
 import 'package:bettertune/presentations/components/album_card.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/album_details_page.dart';
+import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
 
 class AlbumsPage extends StatefulWidget {
@@ -14,16 +15,13 @@ class AlbumsPage extends StatefulWidget {
 class AlbumsPageState extends State<AlbumsPage> {
   bool selectionMode = false;
   Set<Album> selectedAlbums = {};
+  late Future<List<Album>> _albumsFuture;
 
-  final albums = List<Album>.generate(
-    20,
-    (index) => Album(
-      id: index.toString(),
-      title: 'Album $index',
-      year: 2025,
-      artist: 'Futur',
-    ),
-  );
+  @override
+  void initState() {
+    super.initState();
+    _albumsFuture = SongsService().getAlbums(limit: 100);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,47 +39,69 @@ class AlbumsPageState extends State<AlbumsPage> {
         if (context.mounted) Navigator.pop(context);
       },
 
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 20,
-              crossAxisSpacing: 10,
-              padding: const EdgeInsets.only(bottom: 100),
-              children: List.generate(albums.length, (index) {
-                final album = albums[index];
-                return AlbumCard(
-                  album: album,
-                  selectionMode: selectionMode,
-                  isSelect: selectedAlbums.contains(album),
-                  onSelection: () => onAlbumSelection(album),
-                  onPress: () {
-                    if (selectionMode) {
-                      onAlbumSelection(album);
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AlbumDetailsPage(album: album),
-                        ),
-                      );
-                    }
+      child: FutureBuilder<List<Album>>(
+        future: _albumsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          final albums = snapshot.data ?? [];
+
+          if (albums.isEmpty) {
+            return const Center(child: Text("No albums found."));
+          }
+
+          return Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 20,
+                    crossAxisSpacing: 10,
+                  ),
+                  itemCount: albums.length,
+                  padding: const EdgeInsets.only(bottom: 100),
+                  itemBuilder: (context, index) {
+                    final album = albums[index];
+                    return AlbumCard(
+                      album: album,
+                      selectionMode: selectionMode,
+                      isSelect: selectedAlbums.contains(album),
+                      onSelection: () => onAlbumSelection(album),
+                      onPress: () {
+                        if (selectionMode) {
+                          onAlbumSelection(album);
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  AlbumDetailsPage(album: album),
+                            ),
+                          );
+                        }
+                      },
+                    );
                   },
-                );
-              }),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SelectionBottomBar(
-              selectionCount: selectedAlbums.length,
-              onPlay: () => print("Play Selected Albums"),
-              onAddToPlaylist: () => print("Add Selected Albums to Playlist"),
-            ),
-          ),
-        ],
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: SelectionBottomBar(
+                  selectionCount: selectedAlbums.length,
+                  onPlay: () => print("Play Selected Albums"),
+                  onAddToPlaylist: () =>
+                      print("Add Selected Albums to Playlist"),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

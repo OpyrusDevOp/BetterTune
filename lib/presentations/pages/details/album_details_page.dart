@@ -2,6 +2,8 @@ import 'package:bettertune/models/album.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/global_action_buttons.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
+import 'package:bettertune/services/api_client.dart';
+import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:flutter/material.dart';
 
@@ -16,23 +18,15 @@ class AlbumDetailsPage extends StatefulWidget {
 
 class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
   // Mock songs for this album
-  late List<Song> songs;
+  // Mock songs for this album
+  Future<List<Song>>? _songsFuture;
   bool selectionMode = false;
   Set<Song> selectedSongs = {};
 
   @override
   void initState() {
     super.initState();
-    songs = List.generate(
-      12,
-      (index) => Song(
-        id: "${widget.album.id}_$index",
-        name: "Track ${index + 1}",
-        album: widget.album.title,
-        artist: widget.album.artist,
-        isFavorite: false,
-      ),
-    );
+    _songsFuture = SongsService().getSongsByAlbum(widget.album.id);
   }
 
   @override
@@ -53,21 +47,22 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
                     fit: StackFit.expand,
                     children: [
                       Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(context).primaryColor,
-                              Theme.of(context).colorScheme.surface,
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
                         child: Center(
                           child: Icon(
                             Icons.album,
                             size: 100,
                             color: Colors.white24,
+                          ),
+                        ),
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: NetworkImage(
+                              ApiClient().getImageUrl(
+                                widget.album.id,
+                                width: 800,
+                              ),
+                            ),
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
@@ -101,24 +96,49 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
               ),
 
               // 3. Song List
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final song = songs[index];
-                  final isSelected = selectedSongs.contains(song);
-                  return SongTile(
-                    song: song,
-                    isSelect: isSelected,
-                    selectionMode: selectionMode,
-                    onSelection: () => onSongSelection(song),
-                    onPress: () {
-                      if (selectionMode) {
-                        onSongSelection(song);
-                      } else {
-                        print("Play ${song.name}");
-                      }
-                    },
+              FutureBuilder<List<Song>>(
+                future: _songsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+                  final songs = snapshot.data ?? [];
+                  if (songs.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Center(child: Text("No songs found")),
+                      ),
+                    );
+                  }
+
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final song = songs[index];
+                      final isSelected = selectedSongs.contains(song);
+                      return SongTile(
+                        song: song,
+                        isSelect: isSelected,
+                        selectionMode: selectionMode,
+                        onSelection: () => onSongSelection(song),
+                        onPress: () {
+                          if (selectionMode) {
+                            onSongSelection(song);
+                          } else {
+                            // Play Song (Open Player)
+                            print("Play ${song.name}");
+                            Navigator.of(context).pushNamed('/player');
+                          }
+                        },
+                      );
+                    }, childCount: songs.length),
                   );
-                }, childCount: songs.length),
+                },
               ),
               // Add padding at bottom for FAB or BottomBar
               SliverPadding(padding: EdgeInsets.only(bottom: 100)),
