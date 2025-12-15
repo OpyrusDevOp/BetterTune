@@ -1,3 +1,4 @@
+import 'package:bettertune/services/api_client.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/artist.dart';
@@ -61,10 +62,25 @@ class ArtistCard extends StatelessWidget {
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  child: Icon(
-                    Icons.person_rounded,
-                    size: 50,
-                    color: colorScheme.onPrimaryContainer,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(60),
+                    child: Image.network(
+                      ApiClient().getImageUrl(
+                        artist.id,
+                        width: 200,
+                        height: 200,
+                      ),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: 50,
+                            color: colorScheme.onPrimaryContainer,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
 

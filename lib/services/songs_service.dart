@@ -95,4 +95,70 @@ class SongsService {
     }
     return [];
   }
+
+  /// Fetch Artists
+  Future<List<Artist>> getArtists({int limit = 50}) async {
+    final client = ApiClient();
+    if (client.userId == null) return [];
+
+    final result = await client.get(
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=MusicArtist&SortBy=SortName&SortOrder=Ascending&Limit=$limit',
+    );
+
+    if (result != null && result['Items'] != null) {
+      return (result['Items'] as List).map<Artist>((item) {
+        return Artist(id: item['Id'], name: item['Name']);
+      }).toList();
+    }
+    return [];
+  }
+
+  /// Get albums for a specific Artist
+  Future<List<Album>> getAlbumsByArtist(String artistName) async {
+    final client = ApiClient();
+    if (client.userId == null) return [];
+
+    // Jellyfin often filters by Artist Name for albums
+    final result = await client.get(
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=MusicAlbum&SortBy=SortName&SortOrder=Ascending&Artist=$artistName',
+    );
+
+    if (result != null && result['Items'] != null) {
+      return (result['Items'] as List).map<Album>((item) {
+        return Album(
+          id: item['Id'],
+          title: item['Name'],
+          artist: item['AlbumArtist'] ?? artistName,
+          year: item['ProductionYear'] ?? 0,
+        );
+      }).toList();
+    }
+    return [];
+  }
+
+  /// Get songs for a specific Artist
+  Future<List<Song>> getSongsByArtist(
+    String artistId,
+    String artistName,
+  ) async {
+    final client = ApiClient();
+    if (client.userId == null) return [];
+
+    final result = await client.get(
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=Audio&Fields=MediaStreams&SortBy=SortName&SortOrder=Ascending&ArtistIds=$artistId',
+    );
+
+    if (result != null && result['Items'] != null) {
+      return (result['Items'] as List).map<Song>((item) {
+        return Song(
+          id: item['Id'],
+          name: item['Name'],
+          album: item['Album'] ?? 'Unknown Album',
+          artist: item['AlbumArtist'] ?? artistName,
+          isFavorite: item['UserData']?['IsFavorite'] ?? false,
+        );
+      }).toList();
+    }
+    return [];
+  }
 }

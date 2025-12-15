@@ -3,6 +3,8 @@ import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/global_action_buttons.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
+import 'package:bettertune/services/api_client.dart';
+import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
 
 class ArtistDetailsPage extends StatefulWidget {
@@ -16,35 +18,31 @@ class ArtistDetailsPage extends StatefulWidget {
 
 class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
   // Mock Data: Map of Album Name -> List of Songs
-  late Map<String, List<Song>> albums;
+  // Mock Data: Map of Album Name -> List of Songs
+  Future<Map<String, List<Song>>>? _dataFuture;
   bool selectionMode = false;
   Set<Song> selectedSongs = {};
 
   @override
   void initState() {
     super.initState();
-    albums = {
-      "Album One": List.generate(
-        3,
-        (i) => Song(
-          id: "a1_$i",
-          name: "Song $i",
-          album: "Album One",
-          artist: widget.artist.name,
-          isFavorite: false,
-        ),
-      ),
-      "Album Two": List.generate(
-        4,
-        (i) => Song(
-          id: "a2_$i",
-          name: "Track $i",
-          album: "Album Two",
-          artist: widget.artist.name,
-          isFavorite: false,
-        ),
-      ),
-    };
+    _dataFuture = _fetchArtistData();
+  }
+
+  Future<Map<String, List<Song>>> _fetchArtistData() async {
+    final songs = await SongsService().getSongsByArtist(
+      widget.artist.id,
+      widget.artist.name,
+    );
+    // Group by album
+    final Map<String, List<Song>> grouped = {};
+    for (var song in songs) {
+      if (!grouped.containsKey(song.album)) {
+        grouped[song.album] = [];
+      }
+      grouped[song.album]!.add(song);
+    }
+    return grouped;
   }
 
   @override
@@ -64,11 +62,16 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
                     fit: StackFit.expand,
                     children: [
                       Container(color: Theme.of(context).primaryColorDark),
-                      Center(
-                        child: Icon(
-                          Icons.person,
-                          size: 80,
-                          color: Colors.white30,
+                      Container(color: Theme.of(context).primaryColorDark),
+                      Image.network(
+                        ApiClient().getImageUrl(widget.artist.id, width: 800),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 80,
+                            color: Colors.white30,
+                          ),
                         ),
                       ),
                     ],
@@ -83,41 +86,68 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
                 ),
               ),
               // Grouped List
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final albumName = albums.keys.elementAt(index);
-                  final albumSongs = albums[albumName]!;
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                        child: Text(
-                          albumName,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(color: Theme.of(context).primaryColor),
-                        ),
+              // Grouped List
+              FutureBuilder<Map<String, List<Song>>>(
+                future: _dataFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
                       ),
-                      ...albumSongs.map((song) {
-                        final isSelected = selectedSongs.contains(song);
-                        return SongTile(
-                          song: song,
-                          isSelect: isSelected,
-                          selectionMode: selectionMode,
-                          onSelection: () => onSongSelection(song),
-                          onPress: () {
-                            if (selectionMode) {
-                              onSongSelection(song);
-                            } else {
-                              print("Play ${song.name}");
-                            }
-                          },
-                        );
-                      }),
-                    ],
+                    );
+                  }
+                  final albums = snapshot.data ?? {};
+                  if (albums.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: Text("No songs found")),
+                      ),
+                    );
+                  }
+
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final albumName = albums.keys.elementAt(index);
+                      final albumSongs = albums[albumName]!;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                            child: Text(
+                              albumName,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                            ),
+                          ),
+                          ...albumSongs.map((song) {
+                            final isSelected = selectedSongs.contains(song);
+                            return SongTile(
+                              song: song,
+                              isSelect: isSelected,
+                              selectionMode: selectionMode,
+                              onSelection: () => onSongSelection(song),
+                              onPress: () {
+                                if (selectionMode) {
+                                  onSongSelection(song);
+                                } else {
+                                  print("Play ${song.name}");
+                                  Navigator.of(context).pushNamed('/player');
+                                }
+                              },
+                            );
+                          }),
+                        ],
+                      );
+                    }, childCount: albums.length),
                   );
-                }, childCount: albums.length),
+                },
               ),
               SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
