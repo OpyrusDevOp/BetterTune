@@ -166,6 +166,21 @@ class AudioPlayerService {
     await setQueue([song]);
   }
 
+  // Jumps to a specific song in the current queue if it exists
+  Future<void> jumpToSong(Song song) async {
+    final sequence = _player.sequence;
+    if (sequence != null) {
+      for (int i = 0; i < sequence.length; i++) {
+        final source = sequence[i] as UriAudioSource;
+        final tag = source.tag as MediaItem;
+        if (tag.id == song.id) {
+          await _player.seek(Duration.zero, index: i);
+          return;
+        }
+      }
+    }
+  }
+
   Future<void> play() async {
     await _player.play();
   }
