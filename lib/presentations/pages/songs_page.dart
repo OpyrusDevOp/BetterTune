@@ -15,13 +15,73 @@ class SongsPage extends StatefulWidget {
 
 class _SongsPageStateSongsPage extends State<SongsPage> {
   bool selectionMode = false;
-  late Future<List<Song>> _songsFuture;
+  late Future<List<Song>>
+  _songsFuture; // Removed in favor of manual list management
+  List<Song> songs = [];
   Set<Song> selectedSongs = {};
+
+  // Pagination State
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
+  bool _hasMore = true;
+  int _startIndex = 0;
+  final int _limit = 50; // Fetch 50 at a time
 
   @override
   void initState() {
     super.initState();
-    _songsFuture = SongsService().getSongs(limit: 500);
+    _fetchSongs(); // Initial fetch
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoading &&
+        _hasMore) {
+      _fetchSongs();
+    }
+  }
+
+  Future<void> _fetchSongs({bool isRefresh = false}) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    if (isRefresh) {
+      _startIndex = 0;
+      _hasMore = true;
+      songs.clear();
+    }
+
+    try {
+      final newSongs = await SongsService().getSongs(
+        limit: _limit,
+        startIndex: _startIndex,
+      );
+
+      setState(() {
+        if (isRefresh) {
+          songs = newSongs;
+        } else {
+          songs.addAll(newSongs);
+        }
+
+        _startIndex += newSongs.length;
+        if (newSongs.length < _limit) {
+          _hasMore = false;
+        }
+      });
+    } catch (e) {
+      debugPrint("Error fetching songs: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -37,79 +97,67 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
           });
           return;
         }
-        // Don't pop main screen
       },
-      child: FutureBuilder<List<Song>>(
-        future: _songsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          final songs = snapshot.data ?? [];
-
-          if (songs.isEmpty) {
-            return const Center(child: Text("No songs found."));
-          }
-
-          return RefreshIndicator(
-            onRefresh: _refreshSongs,
-            child: Stack(
-              children: [
-                ListView.builder(
-                  physics:
-                      const AlwaysScrollableScrollPhysics(), // Ensure pull-to-refresh works even if list is short
-                  itemCount: songs.length,
-                  padding: const EdgeInsets.only(
-                    bottom: 100,
-                  ), // Space for MiniPlayer
-                  itemBuilder: (context, index) {
-                    var song = songs[index];
-                    var isSelected = selectedSongs.contains(song);
-
-                    return SongTile(
-                      song: song,
-                      isSelect: isSelected,
-                      onPress: () => onSongClick(song),
-                      onSelection: () => onSongSelection(song),
-                      selectionMode: selectionMode,
-                      trailing: selectionMode
-                          ? null
-                          : IconButton(
-                              icon: Icon(Icons.more_vert),
-                              onPressed: () => _showSongOptions(context, song),
-                            ),
+      child: RefreshIndicator(
+        onRefresh: () async => await _fetchSongs(isRefresh: true),
+        child: Stack(
+          children: [
+            if (songs.isEmpty && _isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (songs.isEmpty)
+              const Center(child: Text("No songs found."))
+            else
+              ListView.builder(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: songs.length + (_hasMore ? 1 : 0),
+                padding: const EdgeInsets.only(bottom: 100),
+                itemBuilder: (context, index) {
+                  if (index == songs.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
                     );
-                  },
-                ),
+                  }
+                  var song = songs[index];
+                  var isSelected = selectedSongs.contains(song);
 
-                if (selectionMode)
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 10.0),
-                      child: SelectionBottomBar(
-                        selectionCount: selectedSongs.length,
-                        onPlay: () {
-                          print("Play ${selectedSongs.length} items");
-                          _exitSelection();
-                        },
-                        onAddToPlaylist: () {
-                          _showAddToPlaylistDialog(
-                            context,
-                            selectedSongs.toList(),
-                          );
-                          _exitSelection();
-                        },
-                      ),
-                    ),
+                  return SongTile(
+                    song: song,
+                    isSelect: isSelected,
+                    onPress: () => onSongClick(song),
+                    onSelection: () => onSongSelection(song),
+                    selectionMode: selectionMode,
+                    trailing: selectionMode
+                        ? null
+                        : IconButton(
+                            icon: Icon(Icons.more_vert),
+                            onPressed: () => _showSongOptions(context, song),
+                          ),
+                  );
+                },
+              ),
+
+            if (selectionMode)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: SelectionBottomBar(
+                    selectionCount: selectedSongs.length,
+                    onPlay: () {
+                      print("Play ${selectedSongs.length} items");
+                      _exitSelection();
+                    },
+                    onAddToPlaylist: () {
+                      _showAddToPlaylistDialog(context, selectedSongs.toList());
+                      _exitSelection();
+                    },
                   ),
-              ],
-            ),
-          );
-        },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
