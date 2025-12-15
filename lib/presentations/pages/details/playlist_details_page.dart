@@ -6,6 +6,8 @@ import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/services/playlist_service.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:bettertune/presentations/utils/song_options_helper.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 
 class PlaylistDetailsPage extends StatefulWidget {
   final Playlist playlist;
@@ -81,11 +83,21 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
                           onPress: () {
                             if (selectionMode) {
                               onSongSelection(song);
-                            } else {
-                              print("Play ${song.name}");
+                              // Play Playlist Context
+                              AudioPlayerService().setQueue(
+                                songs,
+                                initialIndex: index,
+                              );
                               Navigator.of(context).pushNamed('/player');
                             }
                           },
+                          trailing: selectionMode
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.more_vert),
+                                  onPressed: () =>
+                                      showSongOptions(context, song),
+                                ),
                         );
                       },
                     );

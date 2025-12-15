@@ -7,6 +7,8 @@ import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:bettertune/presentations/utils/song_options_helper.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 
 class AlbumDetailsPage extends StatefulWidget {
   final Album album;
@@ -84,11 +86,28 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
               // 2. Global Actions
               SliverToBoxAdapter(
                 child: GlobalActionButtons(
-                  onPlayAll: () {
-                    print("Play All from Album");
+                  onPlayAll: () async {
+                    if (_songsFuture != null) {
+                      final songs = await _songsFuture!;
+                      if (songs.isNotEmpty) {
+                        AudioPlayerService().setQueue(songs);
+                        if (context.mounted) {
+                          Navigator.of(context).pushNamed('/player');
+                        }
+                      }
+                    }
                   },
-                  onShuffle: () {
-                    print("Shuffle Album");
+                  onShuffle: () async {
+                    if (_songsFuture != null) {
+                      final songs = await _songsFuture!;
+                      if (songs.isNotEmpty) {
+                        final shuffled = List<Song>.from(songs)..shuffle();
+                        AudioPlayerService().setQueue(shuffled);
+                        if (context.mounted) {
+                          Navigator.of(context).pushNamed('/player');
+                        }
+                      }
+                    }
                   },
                   onAddToPlaylist: () async {
                     if (_songsFuture != null) {
@@ -136,11 +155,20 @@ class _AlbumDetailsPageState extends State<AlbumDetailsPage> {
                           if (selectionMode) {
                             onSongSelection(song);
                           } else {
-                            // Play Song (Open Player)
-                            print("Play ${song.name}");
+                            // Play context
+                            AudioPlayerService().setQueue(
+                              songs,
+                              initialIndex: index,
+                            );
                             Navigator.of(context).pushNamed('/player');
                           }
                         },
+                        trailing: selectionMode
+                            ? null
+                            : IconButton(
+                                icon: Icon(Icons.more_vert),
+                                onPressed: () => showSongOptions(context, song),
+                              ),
                       );
                     }, childCount: songs.length),
                   );

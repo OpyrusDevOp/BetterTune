@@ -1,3 +1,5 @@
+import 'package:bettertune/services/audio_player_service.dart';
+import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/services/api_client.dart';
 import 'package:flutter/material.dart';
 
@@ -170,17 +172,41 @@ class AlbumCard extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.play_arrow),
                 title: const Text('Play'),
-                onTap: () async {},
+                onTap: () async {
+                  Navigator.pop(context);
+                  final songs = await SongsService().getSongsByAlbum(album.id);
+                  AudioPlayerService().setQueue(songs);
+                  if (context.mounted) {
+                    Navigator.pushNamed(context, '/player');
+                  }
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.shuffle),
                 title: const Text('Shuffle'),
-                onTap: () async {},
+                onTap: () async {
+                  Navigator.pop(context);
+                  final songs = await SongsService().getSongsByAlbum(album.id);
+                  songs.shuffle();
+                  AudioPlayerService().setQueue(songs);
+                  if (context.mounted) {
+                    Navigator.pushNamed(context, '/player');
+                  }
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.queue_music),
                 title: const Text('Add to Queue'),
-                onTap: () {},
+                onTap: () async {
+                  Navigator.pop(context);
+                  final songs = await SongsService().getSongsByAlbum(album.id);
+                  await AudioPlayerService().addToQueueList(songs);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Added ${album.title} to queue')),
+                    );
+                  }
+                },
               ),
             ],
           ),

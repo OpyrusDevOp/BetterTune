@@ -110,7 +110,10 @@ class AudioPlayerService {
         );
       }).toList();
 
-      await _player.setAudioSources(children, initialIndex: initialIndex);
+      await _player.setAudioSource(
+        ConcatenatingAudioSource(children: children),
+        initialIndex: initialIndex,
+      );
       await _player.play();
     } catch (e) {
       debugPrint("Error setting queue: $e");
@@ -118,31 +121,52 @@ class AudioPlayerService {
   }
 
   Future<void> addToQueue(Song song) async {
+    await addToQueueList([song]);
+  }
+
+  Future<void> addToQueueList(List<Song> songs) async {
     try {
       final headers = ApiClient().authHeaders;
-      final url = SongsService().getStreamUrl(song.id);
-      final imageUrl = ApiClient().getImageUrl(
-        song.id,
-        width: 300,
-        height: 300,
-      );
+      final List<AudioSource> newSources = [];
 
-      final source = AudioSource.uri(
-        Uri.parse(url),
-        headers: headers,
-        tag: MediaItem(
-          id: song.id,
-          title: song.name,
-          artist: song.artist,
-          album: song.album,
-          artUri: Uri.parse(imageUrl),
-          extras: {'isFavorite': song.isFavorite},
-        ),
-      );
+      for (var song in songs) {
+        final url = SongsService().getStreamUrl(song.id);
+        final imageUrl = ApiClient().getImageUrl(
+          song.id,
+          width: 300,
+          height: 300,
+        );
 
-      final playlist = _player.audioSource as ConcatenatingAudioSource?;
-      if (playlist != null) {
-        await playlist.add(source);
+        newSources.add(
+          AudioSource.uri(
+            Uri.parse(url),
+            headers: headers,
+            tag: MediaItem(
+              id: song.id,
+              title: song.name,
+              artist: song.artist,
+              album: song.album,
+              artUri: Uri.parse(imageUrl),
+              extras: {'isFavorite': song.isFavorite},
+            ),
+          ),
+        );
+      }
+
+      final currentSource = _player.audioSource;
+      if (currentSource is ConcatenatingAudioSource) {
+        await currentSource.addAll(newSources);
+      } else {
+        // If current source is not a playlist (or null), create one.
+        final List<AudioSource> newQueue = [];
+        if (currentSource != null) {
+          newQueue.add(currentSource);
+        }
+        newQueue.addAll(newSources);
+
+        await _player.setAudioSource(
+          ConcatenatingAudioSource(children: newQueue),
+        );
       }
     } catch (e) {
       debugPrint("Error adding to queue: $e");
@@ -153,9 +177,9 @@ class AudioPlayerService {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final playlist = _player.audioSource as ConcatenatingAudioSource?;
-    if (playlist != null) {
-      await playlist.move(oldIndex, newIndex);
+    final currentSource = _player.audioSource;
+    if (currentSource is ConcatenatingAudioSource) {
+      await currentSource.move(oldIndex, newIndex);
     }
   }
 
