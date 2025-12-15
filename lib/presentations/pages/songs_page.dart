@@ -1,9 +1,8 @@
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/services/songs_service.dart';
-import 'package:bettertune/services/playlist_service.dart'; // Use Real Service
-import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:flutter/material.dart';
 
 class SongsPage extends StatefulWidget {
@@ -150,7 +149,7 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
                       _exitSelection();
                     },
                     onAddToPlaylist: () {
-                      _showAddToPlaylistDialog(context, selectedSongs.toList());
+                      showAddToPlaylistDialog(context, selectedSongs.toList());
                       _exitSelection();
                     },
                   ),
@@ -187,106 +186,6 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
     });
   }
 
-  void _showAddToPlaylistDialog(BuildContext context, List<Song> songsToAdd) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return FutureBuilder<List<Playlist>>(
-          future: PlaylistService().getPlaylists(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData)
-              return Center(child: CircularProgressIndicator());
-            final playlists = snapshot.data!;
-
-            return AlertDialog(
-              title: Text("Add to Playlist"),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: playlists.length + 1, // +1 for "New Playlist"
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return ListTile(
-                        leading: Icon(Icons.add),
-                        title: Text("New Playlist"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _createNewPlaylist(context, songsToAdd);
-                        },
-                      );
-                    }
-                    final p = playlists[index - 1];
-                    return ListTile(
-                      leading: Icon(Icons.playlist_play),
-                      title: Text(p.name),
-                      // subtitle: Text("${p.songs.length} songs"), // TODO: Add song count to model if available
-                      onTap: () async {
-                        // Extract IDs
-                        List<String> ids = songsToAdd.map((s) => s.id).toList();
-                        await PlaylistService().addToPlaylist(p.id, ids);
-
-                        if (context.mounted) Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Added to ${p.name}")),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _createNewPlaylist(BuildContext context, List<Song> songsToAdd) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("New Playlist Name"),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(hintText: "My Playlist"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (controller.text.isNotEmpty) {
-                  await PlaylistService().createPlaylist(controller.text);
-                  // Limitation: We created it, but didn't add songs yet because Create API assumes empty?
-                  // Actually, usually we create then add.
-                  // For now simple flow:
-                  Navigator.pop(context);
-                  // Ideally re-trigger add to playlist flow or chain calls.
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text("Playlist Created")));
-                }
-              },
-              child: Text("Create"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showSongOptions(BuildContext context, Song song) {
     showModalBottomSheet(
       context: context,
@@ -308,7 +207,7 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
                 title: Text("Add to Playlist"),
                 onTap: () {
                   Navigator.pop(context);
-                  _showAddToPlaylistDialog(context, [song]);
+                  showAddToPlaylistDialog(context, [song]);
                 },
               ),
               ListTile(

@@ -28,9 +28,12 @@ class PlaylistsPageState extends State<PlaylistsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _createNewPlaylist(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Visibility(
+        visible: !selectionMode,
+        child: FloatingActionButton(
+          onPressed: () => _createNewPlaylist(context),
+          child: const Icon(Icons.add),
+        ),
       ),
       body: PopScope<void>(
         canPop: false,
@@ -123,7 +126,48 @@ class PlaylistsPageState extends State<PlaylistsPage> {
                         selectionMode = false;
                       });
                     },
-                    onDelete: () => print("Delete Selected Playlists"),
+                    onDelete: () async {
+                      if (selectedPlaylists.isEmpty) return;
+
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Delete Playlists?"),
+                          content: Text(
+                            "Are you sure you want to delete ${selectedPlaylists.length} playlists?",
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                "Delete",
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        for (var p in selectedPlaylists) {
+                          await PlaylistService().deletePlaylist(p.id);
+                        }
+                        setState(() {
+                          _playlistsFuture = PlaylistService().getPlaylists();
+                          selectedPlaylists.clear();
+                          selectionMode = false;
+                        });
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Playlists deleted")),
+                          );
+                        }
+                      }
+                    },
                   ),
                 ),
               ],

@@ -65,6 +65,34 @@ class PlaylistService {
     await client.post(uri.toString());
   }
 
+  Future<void> removeItemsFromPlaylist(
+    String playlistId,
+    List<String> itemIds,
+  ) async {
+    // API: DELETE /Playlists/{Id}/Items?Ids={Ids}&UserId={UserId}
+    // Alternatively: /Playlists/{Id}/Items?EntryIds={EntryIds} if we had them.
+    // Using Ids is safer for "remove this song" intent.
+    final client = ApiClient();
+    if (client.userId == null) return;
+
+    final queryParams = {'Ids': itemIds.join(','), 'UserId': client.userId};
+
+    final uri = Uri(
+      path: '/Playlists/$playlistId/Items',
+      queryParameters: queryParams,
+    );
+
+    await client.delete(uri.toString());
+  }
+
+  Future<void> deletePlaylist(String playlistId) async {
+    // API: DELETE /Items/{Id}
+    final client = ApiClient();
+    if (client.userId == null) return;
+
+    await client.delete('/Items/$playlistId');
+  }
+
   Future<List<Song>> getPlaylistItems(String playlistId) async {
     final client = ApiClient();
     if (client.userId == null) return [];

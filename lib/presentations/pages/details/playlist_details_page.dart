@@ -106,13 +106,53 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
                   selectionMode = false;
                 });
               },
-              onDelete: () {
-                // Remove functionality
-                print("Remove from playlist");
-                setState(() {
-                  selectedSongs.clear();
-                  selectionMode = false;
-                });
+              onDelete: () async {
+                if (selectedSongs.isEmpty) return;
+
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Remove Songs?"),
+                    content: Text(
+                      "Remove ${selectedSongs.length} songs from this playlist?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          "Remove",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  final ids = selectedSongs.map((s) => s.id).toList();
+                  await PlaylistService().removeItemsFromPlaylist(
+                    widget.playlist.id,
+                    ids,
+                  );
+
+                  setState(() {
+                    _playlistSongsFuture = PlaylistService().getPlaylistItems(
+                      widget.playlist.id,
+                    );
+                    selectedSongs.clear();
+                    selectionMode = false;
+                  });
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text("Songs removed")));
+                  }
+                }
               },
             ),
           ),

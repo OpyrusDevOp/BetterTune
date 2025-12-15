@@ -1,8 +1,7 @@
+import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
-import 'package:bettertune/services/playlist_service.dart';
-import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
 
@@ -92,7 +91,7 @@ class FavouritesPageState extends State<FavouritesPage> {
                         _exitSelection();
                       },
                       onAddToPlaylist: () {
-                        _showAddToPlaylistDialog(
+                        showAddToPlaylistDialog(
                           context,
                           selectedSongs.toList(),
                         );
@@ -145,69 +144,6 @@ class FavouritesPageState extends State<FavouritesPage> {
     }
   }
 
-  void _showAddToPlaylistDialog(BuildContext context, List<Song> songsToAdd) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return FutureBuilder<List<Playlist>>(
-          future: PlaylistService().getPlaylists(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData)
-              return Center(child: CircularProgressIndicator());
-            final playlists = snapshot.data!;
-
-            return AlertDialog(
-              title: Text("Add to Playlist"),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: playlists.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return ListTile(
-                        leading: Icon(Icons.add),
-                        title: Text("New Playlist"),
-                        onTap: () {
-                          Navigator.pop(context);
-                          // create playlist logic - similar to SongsPage if needed, or just show not implemented for now
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Create Playlist WIP")),
-                          );
-                        },
-                      );
-                    }
-                    final p = playlists[index - 1];
-                    return ListTile(
-                      leading: Icon(Icons.playlist_play),
-                      title: Text(p.name),
-                      // subtitle: Text("${p.songs.length} songs"), // No song count in simple model
-                      onTap: () async {
-                        List<String> ids = songsToAdd.map((s) => s.id).toList();
-                        await PlaylistService().addToPlaylist(p.id, ids);
-
-                        if (context.mounted) Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Added to ${p.name}")),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _showSongOptions(BuildContext context, Song song) {
     showModalBottomSheet(
       context: context,
@@ -228,7 +164,7 @@ class FavouritesPageState extends State<FavouritesPage> {
                 title: Text("Add to Playlist"),
                 onTap: () {
                   Navigator.pop(context);
-                  _showAddToPlaylistDialog(context, [song]);
+                  showAddToPlaylistDialog(context, [song]);
                 },
               ),
             ],
