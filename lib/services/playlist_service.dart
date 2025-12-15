@@ -45,4 +45,31 @@ class PlaylistService {
       '/Playlists/$playlistId/Items?Ids=$idsParam&UserId=${client.userId}',
     );
   }
+
+  Future<List<Song>> getPlaylistItems(String playlistId) async {
+    final client = ApiClient();
+    if (client.userId == null) return [];
+
+    final result = await client.get(
+      '/Users/${client.userId}/Items?ParentId=$playlistId&Recursive=true&IncludeItemTypes=Audio&Fields=MediaStreams,DateCreated&SortBy=SortName&SortOrder=Ascending',
+    );
+
+    if (result != null && result['Items'] != null) {
+      return (result['Items'] as List).map<Song>((item) {
+        return Song(
+          id: item['Id'],
+          name: item['Name'],
+          album: item['Album'] ?? 'Unknown Album',
+          artist:
+              item['AlbumArtist'] ??
+              item['Artists'].firstWhere(
+                (_) => true,
+                orElse: () => 'Unknown Artist',
+              ),
+          isFavorite: item['UserData']?['IsFavorite'] ?? false,
+        );
+      }).toList();
+    }
+    return [];
+  }
 }

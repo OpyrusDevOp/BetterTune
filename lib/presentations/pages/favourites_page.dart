@@ -1,7 +1,7 @@
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
-import 'package:bettertune/data/playlist_repository.dart';
+import 'package:bettertune/services/playlist_service.dart';
 import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
@@ -146,12 +146,11 @@ class FavouritesPageState extends State<FavouritesPage> {
   }
 
   void _showAddToPlaylistDialog(BuildContext context, List<Song> songsToAdd) {
-    final repo = PlaylistRepository();
     showDialog(
       context: context,
       builder: (context) {
         return FutureBuilder<List<Playlist>>(
-          future: repo.getPlaylists(),
+          future: PlaylistService().getPlaylists(),
           builder: (context, snapshot) {
             if (!snapshot.hasData)
               return Center(child: CircularProgressIndicator());
@@ -171,7 +170,10 @@ class FavouritesPageState extends State<FavouritesPage> {
                         title: Text("New Playlist"),
                         onTap: () {
                           Navigator.pop(context);
-                          // create playlist logic
+                          // create playlist logic - similar to SongsPage if needed, or just show not implemented for now
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Create Playlist WIP")),
+                          );
                         },
                       );
                     }
@@ -179,11 +181,11 @@ class FavouritesPageState extends State<FavouritesPage> {
                     return ListTile(
                       leading: Icon(Icons.playlist_play),
                       title: Text(p.name),
-                      subtitle: Text("${p.songs.length} songs"),
+                      // subtitle: Text("${p.songs.length} songs"), // No song count in simple model
                       onTap: () async {
-                        for (var s in songsToAdd) {
-                          await repo.addSongToPlaylist(p.id, s);
-                        }
+                        List<String> ids = songsToAdd.map((s) => s.id).toList();
+                        await PlaylistService().addToPlaylist(p.id, ids);
+
                         if (context.mounted) Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Added to ${p.name}")),

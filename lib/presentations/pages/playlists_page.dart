@@ -1,6 +1,7 @@
 import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/playlist_details_page.dart';
+import 'package:bettertune/services/playlist_service.dart';
 import 'package:flutter/material.dart';
 
 class PlaylistsPage extends StatefulWidget {
@@ -13,11 +14,13 @@ class PlaylistsPage extends StatefulWidget {
 class PlaylistsPageState extends State<PlaylistsPage> {
   bool selectionMode = false;
   Set<Playlist> selectedPlaylists = {};
+  late Future<List<Playlist>> _playlistsFuture;
 
-  final playlists = List<Playlist>.generate(
-    20,
-    (index) => Playlist(id: "pl_$index", name: 'Playlist $index'),
-  );
+  @override
+  void initState() {
+    super.initState();
+    _playlistsFuture = PlaylistService().getPlaylists();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,55 +37,75 @@ class PlaylistsPageState extends State<PlaylistsPage> {
         }
         if (context.mounted) Navigator.pop(context);
       },
-      child: Stack(
-        children: [
-          ListView.builder(
-            itemCount: playlists.length,
-            padding: const EdgeInsets.only(bottom: 100),
-            itemBuilder: (context, index) {
-              final playlist = playlists[index];
-              final isSelected = selectedPlaylists.contains(playlist);
-              return ListTile(
-                leading: Icon(Icons.queue_music),
-                title: Text(playlist.name),
-                selected: isSelected,
-                trailing: selectionMode
-                    ? Checkbox(
-                        value: isSelected,
-                        onChanged: (v) => onPlaylistSelection(playlist),
-                      )
-                    : IconButton(icon: Icon(Icons.more_vert), onPressed: () {}),
-                onTap: () {
-                  if (selectionMode) {
-                    onPlaylistSelection(playlist);
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            PlaylistDetailsPage(playlist: playlist),
-                      ),
-                    );
-                  }
+      child: FutureBuilder<List<Playlist>>(
+        future: _playlistsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          final playlists = snapshot.data ?? [];
+
+          if (playlists.isEmpty) {
+            return const Center(child: Text("No playlists found"));
+          }
+
+          return Stack(
+            children: [
+              ListView.builder(
+                itemCount: playlists.length,
+                padding: const EdgeInsets.only(bottom: 100),
+                itemBuilder: (context, index) {
+                  final playlist = playlists[index];
+                  final isSelected = selectedPlaylists.contains(playlist);
+                  return ListTile(
+                    leading: const Icon(Icons.queue_music, size: 30),
+                    title: Text(playlist.name),
+                    selected: isSelected,
+                    trailing: selectionMode
+                        ? Checkbox(
+                            value: isSelected,
+                            onChanged: (v) => onPlaylistSelection(playlist),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.more_vert),
+                            onPressed: () {},
+                          ),
+                    onTap: () {
+                      if (selectionMode) {
+                        onPlaylistSelection(playlist);
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PlaylistDetailsPage(playlist: playlist),
+                          ),
+                        );
+                      }
+                    },
+                    onLongPress: () {
+                      if (!selectionMode) {
+                        onPlaylistSelection(playlist);
+                      }
+                    },
+                  );
                 },
-                onLongPress: () {
-                  if (!selectionMode) {
-                    onPlaylistSelection(playlist);
-                  }
-                },
-              );
-            },
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SelectionBottomBar(
-              selectionCount: selectedPlaylists.length,
-              onPlay: () => print("Play Selected Playlists"),
-              onAddToPlaylist: () => print("Merge Select Playlists"),
-              onDelete: () => print("Delete Selected Playlists"),
-            ),
-          ),
-        ],
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: SelectionBottomBar(
+                  selectionCount: selectedPlaylists.length,
+                  onPlay: () => print("Play Selected Playlists"),
+                  onAddToPlaylist: () => print("Merge Select Playlists"),
+                  onDelete: () => print("Delete Selected Playlists"),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/global_action_buttons.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
+import 'package:bettertune/services/playlist_service.dart';
 import 'package:flutter/material.dart';
 
 class PlaylistDetailsPage extends StatefulWidget {
@@ -15,22 +16,15 @@ class PlaylistDetailsPage extends StatefulWidget {
 }
 
 class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
-  late List<Song> songs;
+  Future<List<Song>>? _playlistSongsFuture;
   bool selectionMode = false;
   Set<Song> selectedSongs = {};
 
   @override
   void initState() {
     super.initState();
-    songs = List.generate(
-      15,
-      (index) => Song(
-        id: "pl_${widget.playlist.id}_$index",
-        name: "Song $index",
-        album: "Various",
-        artist: "Artist $index",
-        isFavorite: false,
-      ),
+    _playlistSongsFuture = PlaylistService().getPlaylistItems(
+      widget.playlist.id,
     );
   }
 
@@ -48,23 +42,43 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
                 onAddToPlaylist: () => print("Add Playlist to another"),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: songs.length,
-                  padding: EdgeInsets.only(bottom: 100),
-                  itemBuilder: (context, index) {
-                    final song = songs[index];
-                    final isSelected = selectedSongs.contains(song);
-                    return SongTile(
-                      song: song,
-                      isSelect: isSelected,
-                      selectionMode: selectionMode,
-                      onSelection: () => onSongSelection(song),
-                      onPress: () {
-                        if (selectionMode) {
-                          onSongSelection(song);
-                        } else {
-                          print("Play ${song.name}");
-                        }
+                child: FutureBuilder<List<Song>>(
+                  future: _playlistSongsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    }
+                    final songs = snapshot.data ?? [];
+
+                    if (songs.isEmpty) {
+                      return const Center(
+                        child: Text("This playlist is empty."),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: songs.length,
+                      padding: const EdgeInsets.only(bottom: 100),
+                      itemBuilder: (context, index) {
+                        final song = songs[index];
+                        final isSelected = selectedSongs.contains(song);
+                        return SongTile(
+                          song: song,
+                          isSelect: isSelected,
+                          selectionMode: selectionMode,
+                          onSelection: () => onSongSelection(song),
+                          onPress: () {
+                            if (selectionMode) {
+                              onSongSelection(song);
+                            } else {
+                              print("Play ${song.name}");
+                              Navigator.of(context).pushNamed('/player');
+                            }
+                          },
+                        );
                       },
                     );
                   },
@@ -82,7 +96,6 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
                 // Remove functionality
                 print("Remove from playlist");
                 setState(() {
-                  songs.removeWhere((s) => selectedSongs.contains(s));
                   selectedSongs.clear();
                   selectionMode = false;
                 });
