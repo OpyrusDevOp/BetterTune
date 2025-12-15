@@ -2,7 +2,6 @@ import 'package:bettertune/services/api_client.dart'; // For image URL
 import 'package:bettertune/services/audio_player_service.dart';
 import 'package:just_audio/just_audio.dart'; // For PlayerState
 import 'package:bettertune/models/song.dart';
-import 'package:bettertune/models/enums.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
@@ -18,28 +17,14 @@ class PlayerScreen extends StatefulWidget {
 class PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin {
   final AudioPlayerService _playerService = AudioPlayerService();
-  bool isShuffled = false;
-  PlayCycle repeatCycle = PlayCycle.noRepeat;
 
-  // Queue State (Mock for now, will connect later)
-  late List<Song> queue;
+  // Queue State
   bool selectionMode = false;
   Set<Song> selectedQueueItems = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize queue with some mock data for now
-    queue = List.generate(
-      15,
-      (index) => Song(
-        id: "q_$index",
-        name: "Queue Track $index",
-        album: "Album $index",
-        artist: "Artist",
-        isFavorite: false,
-      ),
-    );
   }
 
   @override
@@ -104,22 +89,37 @@ class PlayerScreenState extends State<PlayerScreen>
                                 offset: const Offset(0, 10),
                               ),
                             ],
-                            image: imageUrl.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(imageUrl),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
                           ),
-                          child: imageUrl.isEmpty
-                              ? Icon(
-                                  Icons.music_note,
-                                  size: 120,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.inverseSurface.withAlpha(50),
-                                )
-                              : null,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Icon(
+                                          Icons.music_note,
+                                          size: 120,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .inverseSurface
+                                              .withAlpha(50),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
+                                    child: Icon(
+                                      Icons.music_note,
+                                      size: 120,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .inverseSurface
+                                          .withAlpha(50),
+                                    ),
+                                  ),
+                          ),
                         ),
                       ),
                     ),
@@ -233,16 +233,24 @@ class PlayerScreenState extends State<PlayerScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      IconButton(
-                        onPressed: _shuffleQueue,
-                        icon: const Icon(Icons.shuffle),
-                        color: isShuffled
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                        iconSize: 28,
+                      StreamBuilder<bool>(
+                        stream: _playerService.shuffleModeEnabledStream,
+                        builder: (context, snapshot) {
+                          final shuffleEnabled = snapshot.data ?? false;
+                          return IconButton(
+                            onPressed: _playerService.toggleShuffle,
+                            icon: const Icon(Icons.shuffle),
+                            color: shuffleEnabled
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            iconSize: 28,
+                          );
+                        },
                       ),
                       IconButton(
-                        onPressed: () {}, // Previous (TODO)
+                        onPressed: _playerService.skipToPrevious,
                         icon: const Icon(Icons.skip_previous_rounded),
                         color: Theme.of(context).colorScheme.onSurface,
                         iconSize: 42,
@@ -305,22 +313,43 @@ class PlayerScreenState extends State<PlayerScreen>
                       ),
 
                       IconButton(
-                        onPressed: () {}, // Next (TODO)
+                        onPressed: _playerService.skipToNext,
                         icon: const Icon(Icons.skip_next_rounded),
                         color: Theme.of(context).colorScheme.onSurface,
                         iconSize: 42,
                       ),
-                      IconButton(
-                        onPressed: _toggleRepeat,
-                        icon: Icon(
-                          repeatCycle == PlayCycle.repeatOne
-                              ? Icons.repeat_one_rounded
-                              : Icons.repeat_rounded,
-                        ),
-                        color: repeatCycle != PlayCycle.noRepeat
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                        iconSize: 28,
+                      StreamBuilder<LoopMode>(
+                        stream: _playerService.loopModeStream,
+                        builder: (context, snapshot) {
+                          final loopMode = snapshot.data ?? LoopMode.off;
+                          IconData icon;
+                          Color color;
+
+                          switch (loopMode) {
+                            case LoopMode.one:
+                              icon = Icons.repeat_one_rounded;
+                              color = Theme.of(context).colorScheme.primary;
+                              break;
+                            case LoopMode.all:
+                              icon = Icons.repeat_rounded;
+                              color = Theme.of(context).colorScheme.primary;
+                              break;
+                            case LoopMode.off:
+                            default:
+                              icon = Icons.repeat_rounded;
+                              color = Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant;
+                              break;
+                          }
+
+                          return IconButton(
+                            onPressed: _playerService.toggleRepeat,
+                            icon: Icon(icon),
+                            color: color,
+                            iconSize: 28,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -358,35 +387,6 @@ class PlayerScreenState extends State<PlayerScreen>
     final minutes = twoDigits(d.inMinutes.remainder(60));
     final seconds = twoDigits(d.inSeconds.remainder(60));
     return "$minutes:$seconds";
-  }
-
-  void _toggleRepeat() {
-    setState(() {
-      switch (repeatCycle) {
-        case PlayCycle.noRepeat:
-          repeatCycle = PlayCycle.repeatAll;
-        case PlayCycle.repeatAll:
-          repeatCycle = PlayCycle.repeatOne;
-        default:
-          repeatCycle = PlayCycle.noRepeat;
-      }
-    });
-  }
-
-  void _shuffleQueue() {
-    setState(() {
-      if (isShuffled) {
-        // Restore original order (if we kept it, but we didn't store it yet)
-        // ideally we keep `originalQueue`. For now, just re-shuffle or do nothing.
-        // Let's implement robust shuffle:
-        queue.shuffle();
-        // Note: Real implementation needs to keep `originalQueue` to unshuffle.
-      } else {
-        // If un-shuffling, we need original List.
-        // For MPV/Simple player, shuffling usually just randomizes current list.
-      }
-      // For this task, toggle flag is enough to trigger UI state. Logic needs real state management.
-    });
   }
 
   void _toggleSelection(Song song) {
@@ -437,206 +437,204 @@ class PlayerScreenState extends State<PlayerScreen>
                   ),
                   child: StatefulBuilder(
                     builder: (context, setStateSheet) {
-                      void toggleSelectionInSheet(Song song) {
-                        setStateSheet(() {
-                          _toggleSelection(song);
-                        });
-                      }
+                      // We must wrap the whole content in StreamBuilder to listen to queue updates
+                      return StreamBuilder<List<Song>>(
+                        stream: _playerService.queueStream,
+                        builder: (context, snapshot) {
+                          final queue = snapshot.data ?? [];
+                          // Filter queue if selection mode active?
+                          // For simplicity, selection operates on the displayed items.
 
-                      return Column(
-                        children: [
-                          // Handle
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 5,
-                              margin: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant.withAlpha(100),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
+                          void toggleSelectionInSheet(Song song) {
+                            setStateSheet(() {
+                              _toggleSelection(song);
+                            });
+                          }
 
-                          // Actions Header
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0,
-                              vertical: 10,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  selectionMode
-                                      ? "${selectedQueueItems.length} Selected"
-                                      : "Up Next",
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                          return Column(
+                            children: [
+                              // Handle
+                              Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 5,
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                        .withAlpha(100),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    if (selectionMode) ...[
-                                      IconButton(
-                                        icon: Icon(Icons.playlist_add),
-                                        onPressed: () {
-                                          // TODO: Implement Add to Playlist for Queue
-                                          // For now just exit selection
-                                          setStateSheet(() {
-                                            setState(() {
-                                              selectionMode = false;
-                                              selectedQueueItems.clear();
-                                            });
-                                          });
-                                          // Likely call _showAddToPlaylistDialog(context, selectedQueueItems.toList())
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.delete_outline),
-                                        onPressed: () {
-                                          setStateSheet(() {
-                                            setState(() {
-                                              queue.removeWhere(
-                                                (s) => selectedQueueItems
-                                                    .contains(s),
-                                              );
-                                              selectedQueueItems.clear();
-                                              selectionMode = false;
-                                            });
-                                          });
-                                        },
-                                      ),
-                                    ] else ...[
-                                      TextButton(
-                                        onPressed: () {
-                                          setStateSheet(() {
-                                            setState(() {
-                                              queue.clear();
-                                            });
-                                          });
-                                        },
-                                        child: Text("Clear"),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.save_alt),
-                                        tooltip: "Save as Playlist",
-                                        onPressed: () {
-                                          // Save queue implementation
-                                        },
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Divider(color: Theme.of(context).dividerColor),
+                              ),
 
-                          // Queue List
-                          Expanded(
-                            child: ReorderableListView.builder(
-                              buildDefaultDragHandles:
-                                  false, // Important: We provide our own handle
-                              scrollController: scrollController,
-                              padding: EdgeInsets.only(bottom: 20),
-                              onReorder: (oldIndex, newIndex) {
-                                setStateSheet(() {
-                                  setState(() {
-                                    if (oldIndex < newIndex) newIndex -= 1;
-                                    final item = queue.removeAt(oldIndex);
-                                    queue.insert(newIndex, item);
-                                  });
-                                });
-                              },
-                              itemCount: queue.length,
-                              itemBuilder: (context, index) {
-                                final song = queue[index];
-                                final isSelected = selectedQueueItems.contains(
-                                  song,
-                                );
-                                return Material(
-                                  key: ValueKey(song.id),
-                                  color: isSelected
-                                      ? theme.colorScheme.primary.withAlpha(40)
-                                      : Colors.transparent,
-                                  child: ListTile(
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 4,
-                                    ),
-                                    leading: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.music_note,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    title: Text(
-                                      song.name,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Text(
-                                      song.artist,
-                                      style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
-                                      ),
-                                      maxLines: 1,
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (selectionMode)
-                                          Checkbox(
-                                            value: isSelected,
-                                            onChanged: (_) =>
-                                                toggleSelectionInSheet(song),
-                                          )
-                                        else
-                                          ReorderableDragStartListener(
-                                            index: index,
-                                            child: Icon(
-                                              Icons.drag_handle,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
+                              // Actions Header
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20.0,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      selectionMode
+                                          ? "${selectedQueueItems.length} Selected"
+                                          : "Up Next (${queue.length})",
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
                                           ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        if (selectionMode) ...[
+                                          IconButton(
+                                            icon: Icon(Icons.playlist_add),
+                                            onPressed: () {
+                                              // TODO: Implement Add to Playlist for Queue
+                                              setStateSheet(() {
+                                                setState(() {
+                                                  selectionMode = false;
+                                                  selectedQueueItems.clear();
+                                                });
+                                              });
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: Icon(Icons.delete_outline),
+                                            onPressed: () {
+                                              // TODO: Implement Remove from Queue in Service
+                                            },
+                                          ),
+                                        ] else ...[
+                                          TextButton(
+                                            onPressed: () {
+                                              // TODO: Clear Queue in Service
+                                            },
+                                            child: Text("Clear"),
+                                          ),
+                                        ],
                                       ],
                                     ),
-                                    onTap: () {
-                                      if (selectionMode) {
-                                        toggleSelectionInSheet(song);
-                                      } else {
-                                        // Play this track (Mock)
-                                        print("Skip to ${song.name}");
-                                      }
-                                    },
-                                    onLongPress: () =>
-                                        toggleSelectionInSheet(song),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                                  ],
+                                ),
+                              ),
+                              Divider(color: Theme.of(context).dividerColor),
+
+                              // Queue List
+                              Expanded(
+                                child: ReorderableListView.builder(
+                                  buildDefaultDragHandles:
+                                      false, // Important: We provide our own handle
+                                  scrollController: scrollController,
+                                  padding: EdgeInsets.only(bottom: 20),
+                                  onReorder: (oldIndex, newIndex) {
+                                    _playerService.reorder(oldIndex, newIndex);
+                                  },
+                                  itemCount: queue.length,
+                                  itemBuilder: (context, index) {
+                                    final song = queue[index];
+                                    final isSelected = selectedQueueItems
+                                        .contains(song);
+                                    return Material(
+                                      key: ValueKey(
+                                        song.id,
+                                      ), // Ensure unique Keys
+                                      color: isSelected
+                                          ? theme.colorScheme.primary.withAlpha(
+                                              40,
+                                            )
+                                          : Colors.transparent,
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 4,
+                                        ),
+                                        leading: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.music_note,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          song.name,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        subtitle: Text(
+                                          song.artist,
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                          maxLines: 1,
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (selectionMode)
+                                              Checkbox(
+                                                value: isSelected,
+                                                onChanged: (_) =>
+                                                    toggleSelectionInSheet(
+                                                      song,
+                                                    ),
+                                              )
+                                            else
+                                              ReorderableDragStartListener(
+                                                index: index,
+                                                child: Icon(
+                                                  Icons.drag_handle,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        onTap: () {
+                                          if (selectionMode) {
+                                            toggleSelectionInSheet(song);
+                                          } else {
+                                            // Jump to this song
+                                            // We can't just jump to index bc of shuffle vs effective index
+                                            // But since we are displaying effective sequence, calculating index might work?
+                                            // Actually relying on original index might be safer but harder.
+                                            // For now, let's just create a `jumpTo(index)` in service if needed.
+                                            // Or reuse play for now.
+                                          }
+                                        },
+                                        onLongPress: () =>
+                                            toggleSelectionInSheet(song),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   ),

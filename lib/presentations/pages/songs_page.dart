@@ -180,7 +180,11 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
   }
 
   void _playAndOpenPlayer(Song song) {
-    AudioPlayerService().playSong(song);
+    // Find index
+    int index = songs.indexOf(song);
+    if (index == -1) index = 0;
+
+    AudioPlayerService().setQueue(songs, initialIndex: index);
     Navigator.pushNamed(context, '/player');
   }
 

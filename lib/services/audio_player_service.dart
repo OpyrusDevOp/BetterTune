@@ -20,55 +20,105 @@ class AudioPlayerService {
   final AudioPlayer _player = AudioPlayer();
 
   // State
-  final _currentSongController = StreamController<Song?>.broadcast();
-  Song? _currentSong;
+  // We derive current song from _player.currentIndex and the playlist sequence
 
   // Getters
-  Stream<Song?> get currentSongStream => _currentSongController.stream;
-  Song? get currentSong => _currentSong;
-
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
   Stream<Duration> get positionStream => _player.positionStream;
   Stream<Duration?> get durationStream => _player.durationStream;
   Stream<Duration> get bufferedPositionStream => _player.bufferedPositionStream;
+  Stream<bool> get shuffleModeEnabledStream => _player.shuffleModeEnabledStream;
+  Stream<LoopMode> get loopModeStream => _player.loopModeStream;
+
+  // Stream for the current song based on index changes
+  Stream<Song?> get currentSongStream =>
+      _player.currentIndexStream.map((index) {
+        final sequence = _player.sequence;
+        if (index != null && sequence != null && index < sequence.length) {
+          final source = sequence[index] as UriAudioSource;
+          return source.tag as Song?;
+        }
+        return null;
+      });
+
+  Song? get currentSong {
+    final index = _player.currentIndex;
+    final sequence = _player.sequence;
+    if (index != null && sequence != null && index < sequence.length) {
+      final source = sequence[index] as UriAudioSource;
+      return source.tag as Song?;
+    }
+    return null;
+  }
+
+  // Stream for the queue (taking shuffle into account)
+  // This combines sequenceStream and shuffleModeEnabledStream to give the effective list
+  Stream<List<Song>> get queueStream =>
+      _player.sequenceStateStream.map((state) {
+        if (state == null) return [];
+        final sequence = state.effectiveSequence;
+        return sequence
+            .map((source) => (source as UriAudioSource).tag as Song)
+            .toList();
+      });
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
-
-    // Listen to player completion to handle auto-advance (future task)
-    _player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        // TODO: Queue logic
-      }
-    });
   }
 
-  Future<void> playSong(Song song) async {
-    _currentSong = song;
-    _currentSongController.add(song);
+  // --- Queue Management ---
 
-    // Get URL
-    final url = SongsService().getStreamUrl(song.id);
-    if (url.isEmpty) {
-      debugPrint("Error: Stream URL is empty for ${song.name}");
-      return;
-    }
-
+  Future<void> setQueue(List<Song> songs, {int initialIndex = 0}) async {
     try {
-      // Use AudioSource.uri to include headers
       final headers = ApiClient().authHeaders;
+
+      final children = songs.map((song) {
+        final url = SongsService().getStreamUrl(song.id);
+        return AudioSource.uri(Uri.parse(url), headers: headers, tag: song);
+      }).toList();
+
+      await _player.setAudioSources(children, initialIndex: initialIndex);
+      await _player.play();
+    } catch (e) {
+      debugPrint("Error setting queue: $e");
+    }
+  }
+
+  Future<void> addToQueue(Song song) async {
+    try {
+      final headers = ApiClient().authHeaders;
+      final url = SongsService().getStreamUrl(song.id);
       final source = AudioSource.uri(
         Uri.parse(url),
         headers: headers,
-        tag: song, // Optional: useful for metadata later
+        tag: song,
       );
 
-      await _player.setAudioSource(source);
-      await _player.play();
+      final playlist = _player.audioSource as ConcatenatingAudioSource?;
+      if (playlist != null) {
+        await playlist.add(source);
+      }
     } catch (e) {
-      debugPrint("Error loading audio source: $e");
+      debugPrint("Error adding to queue: $e");
     }
+  }
+
+  Future<void> reorder(int oldIndex, int newIndex) async {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final playlist = _player.audioSource as ConcatenatingAudioSource?;
+    if (playlist != null) {
+      await playlist.move(oldIndex, newIndex);
+    }
+  }
+
+  // --- Playback Controls ---
+
+  // Retaining simple playSong for backward compatibility or single plays (creates a queue of 1)
+  Future<void> playSong(Song song) async {
+    await setQueue([song]);
   }
 
   Future<void> play() async {
@@ -87,8 +137,60 @@ class AudioPlayerService {
     await _player.seek(position);
   }
 
+  // --- Navigation & Modes ---
+
+  Future<void> skipToNext() async {
+    if (_player.hasNext) {
+      await _player.seekToNext();
+    } else {
+      // Loop back to start if repeat all or even if standard playlist end (implied requirement "Next: always play the next... or get back to first")
+      await _player.seek(Duration.zero, index: 0);
+    }
+  }
+
+  Future<void> skipToPrevious() async {
+    // If playing for > 3s, restart song
+    if (_player.position.inSeconds > 3) {
+      await _player.seek(Duration.zero);
+    } else {
+      if (_player.hasPrevious) {
+        await _player.seekToPrevious();
+      } else {
+        // "If current song is first... restart it"
+        await _player.seek(Duration.zero);
+      }
+    }
+  }
+
+  Future<void> toggleShuffle() async {
+    final enable = !(_player.shuffleModeEnabled);
+    if (enable) {
+      await _player.setShuffleModeEnabled(true);
+      // Requirement: "current played song is always the first"
+      // just_audio keeps the current song playing when shuffling.
+      // But we might want to ensure the visual queue matches.
+      // The default just_audio shuffle just shuffles the playback order indices.
+    } else {
+      await _player.setShuffleModeEnabled(false);
+    }
+  }
+
+  Future<void> toggleRepeat() async {
+    // Cycle: Off -> All -> One
+    switch (_player.loopMode) {
+      case LoopMode.off:
+        await _player.setLoopMode(LoopMode.all);
+        break;
+      case LoopMode.all:
+        await _player.setLoopMode(LoopMode.one);
+        break;
+      case LoopMode.one:
+        await _player.setLoopMode(LoopMode.off);
+        break;
+    }
+  }
+
   void dispose() {
     _player.dispose();
-    _currentSongController.close();
   }
 }
