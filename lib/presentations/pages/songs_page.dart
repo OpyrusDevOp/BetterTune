@@ -21,7 +21,7 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
   @override
   void initState() {
     super.initState();
-    _songsFuture = SongsService().getSongs();
+    _songsFuture = SongsService().getSongs(limit: 500);
   }
 
   @override
@@ -54,59 +54,71 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
             return const Center(child: Text("No songs found."));
           }
 
-          return Stack(
-            children: [
-              ListView.builder(
-                itemCount: songs.length,
-                padding: const EdgeInsets.only(
-                  bottom: 100,
-                ), // Space for MiniPlayer
-                itemBuilder: (context, index) {
-                  var song = songs[index];
-                  var isSelected = selectedSongs.contains(song);
+          return RefreshIndicator(
+            onRefresh: _refreshSongs,
+            child: Stack(
+              children: [
+                ListView.builder(
+                  physics:
+                      const AlwaysScrollableScrollPhysics(), // Ensure pull-to-refresh works even if list is short
+                  itemCount: songs.length,
+                  padding: const EdgeInsets.only(
+                    bottom: 100,
+                  ), // Space for MiniPlayer
+                  itemBuilder: (context, index) {
+                    var song = songs[index];
+                    var isSelected = selectedSongs.contains(song);
 
-                  return SongTile(
-                    song: song,
-                    isSelect: isSelected,
-                    onPress: () => onSongClick(song),
-                    onSelection: () => onSongSelection(song),
-                    selectionMode: selectionMode,
-                    trailing: selectionMode
-                        ? null
-                        : IconButton(
-                            icon: Icon(Icons.more_vert),
-                            onPressed: () => _showSongOptions(context, song),
-                          ),
-                  );
-                },
-              ),
+                    return SongTile(
+                      song: song,
+                      isSelect: isSelected,
+                      onPress: () => onSongClick(song),
+                      onSelection: () => onSongSelection(song),
+                      selectionMode: selectionMode,
+                      trailing: selectionMode
+                          ? null
+                          : IconButton(
+                              icon: Icon(Icons.more_vert),
+                              onPressed: () => _showSongOptions(context, song),
+                            ),
+                    );
+                  },
+                ),
 
-              if (selectionMode)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10.0),
-                    child: SelectionBottomBar(
-                      selectionCount: selectedSongs.length,
-                      onPlay: () {
-                        print("Play ${selectedSongs.length} items");
-                        _exitSelection();
-                      },
-                      onAddToPlaylist: () {
-                        _showAddToPlaylistDialog(
-                          context,
-                          selectedSongs.toList(),
-                        );
-                        _exitSelection();
-                      },
+                if (selectionMode)
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: SelectionBottomBar(
+                        selectionCount: selectedSongs.length,
+                        onPlay: () {
+                          print("Play ${selectedSongs.length} items");
+                          _exitSelection();
+                        },
+                        onAddToPlaylist: () {
+                          _showAddToPlaylistDialog(
+                            context,
+                            selectedSongs.toList(),
+                          );
+                          _exitSelection();
+                        },
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           );
         },
       ),
     );
+  }
+
+  Future<void> _refreshSongs() async {
+    setState(() {
+      _songsFuture = SongsService().getSongs(limit: 500);
+    });
+    await _songsFuture;
   }
 
   void _exitSelection() {

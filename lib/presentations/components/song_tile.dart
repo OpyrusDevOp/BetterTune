@@ -1,4 +1,5 @@
 import 'package:bettertune/models/song.dart';
+import 'package:bettertune/services/api_client.dart';
 import 'package:flutter/material.dart';
 
 class SongTile extends StatelessWidget {
@@ -56,28 +57,32 @@ class SongTile extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary.withAlpha(100),
-                      colorScheme.primaryContainer,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  borderRadius: BorderRadius.circular(
+                    8,
+                  ), // Reduced radius for poster feel
+                  color: colorScheme.surfaceContainerHighest,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(30),
+                      color: Colors.black.withAlpha(20),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.music_note,
-                    color: colorScheme.onPrimaryContainer,
-                    size: 28,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    ApiClient().getImageUrl(song.id, width: 200, height: 200),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.music_note,
+                          color: colorScheme.onSurfaceVariant,
+                          size: 24,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
