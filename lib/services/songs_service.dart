@@ -161,4 +161,32 @@ class SongsService {
     }
     return [];
   }
+
+  /// Get favorite songs
+  Future<List<Song>> getFavoriteSongs({int limit = 100}) async {
+    final client = ApiClient();
+    if (client.userId == null) return [];
+
+    final result = await client.get(
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=Audio&Fields=MediaStreams,ParentId,DateCreated&Filters=IsFavorite&SortBy=SortName&SortOrder=Ascending&Limit=$limit',
+    );
+
+    if (result != null && result['Items'] != null) {
+      return (result['Items'] as List).map<Song>((item) {
+        return Song(
+          id: item['Id'],
+          name: item['Name'],
+          album: item['Album'] ?? 'Unknown Album',
+          artist:
+              item['AlbumArtist'] ??
+              item['Artists'].firstWhere(
+                (_) => true,
+                orElse: () => 'Unknown Artist',
+              ),
+          isFavorite: true,
+        );
+      }).toList();
+    }
+    return [];
+  }
 }

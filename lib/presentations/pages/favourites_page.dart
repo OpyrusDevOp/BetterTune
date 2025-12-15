@@ -3,6 +3,7 @@ import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/data/playlist_repository.dart';
 import 'package:bettertune/models/playlist.dart';
+import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
 
 class FavouritesPage extends StatefulWidget {
@@ -15,17 +16,13 @@ class FavouritesPage extends StatefulWidget {
 class FavouritesPageState extends State<FavouritesPage> {
   bool selectionMode = false;
   Set<Song> selectedSongs = {};
+  late Future<List<Song>> _favoritesFuture;
 
-  final songs = List<Song>.generate(
-    20,
-    (index) => Song(
-      id: "fav_$index",
-      name: 'Favorite Song $index',
-      album: 'Favorite Album',
-      artist: 'Favorite Artist',
-      isFavorite: true,
-    ),
-  );
+  @override
+  void initState() {
+    super.initState();
+    _favoritesFuture = SongsService().getFavoriteSongs();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,48 +39,71 @@ class FavouritesPageState extends State<FavouritesPage> {
         }
         if (context.mounted) Navigator.pop(context);
       },
-      child: Stack(
-        children: [
-          ListView.builder(
-            padding: EdgeInsets.only(bottom: selectionMode ? 100 : 20),
-            itemCount: songs.length,
-            itemBuilder: (context, index) {
-              var song = songs[index];
-              var isSelected = selectedSongs.contains(song);
-              return SongTile(
-                song: song,
-                isSelect: isSelected,
-                onPress: () => onSongClick(song),
-                onSelection: () => onSongSelection(song),
-                selectionMode: selectionMode,
-                trailing: selectionMode
-                    ? null
-                    : IconButton(
-                        icon: Icon(Icons.more_vert),
-                        onPressed: () => _showSongOptions(context, song),
-                      ),
-              );
-            },
-          ),
-          if (selectionMode)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 80.0),
-                child: SelectionBottomBar(
-                  selectionCount: selectedSongs.length,
-                  onPlay: () {
-                    print("Play ${selectedSongs.length} items");
-                    _exitSelection();
-                  },
-                  onAddToPlaylist: () {
-                    _showAddToPlaylistDialog(context, selectedSongs.toList());
-                    _exitSelection();
-                  },
-                ),
+      child: FutureBuilder<List<Song>>(
+        future: _favoritesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          final songs = snapshot.data ?? [];
+
+          if (songs.isEmpty) {
+            return const Center(child: Text("No favorites found."));
+          }
+
+          return Stack(
+            children: [
+              ListView.builder(
+                padding: EdgeInsets.only(bottom: selectionMode ? 100 : 20),
+                itemCount: songs.length,
+                itemBuilder: (context, index) {
+                  var song = songs[index];
+                  var isSelected = selectedSongs.contains(song);
+                  return SongTile(
+                    song: song,
+                    isSelect: isSelected,
+                    onPress: () => onSongClick(song),
+                    onSelection: () => onSongSelection(song),
+                    selectionMode: selectionMode,
+                    trailing: selectionMode
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.more_vert),
+                            onPressed: () => _showSongOptions(context, song),
+                          ),
+                  );
+                },
               ),
-            ),
-        ],
+              if (selectionMode)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: 0.0,
+                    ), // Fixed padding
+                    child: SelectionBottomBar(
+                      selectionCount: selectedSongs.length,
+                      onPlay: () {
+                        print("Play ${selectedSongs.length} items");
+                        _exitSelection();
+                      },
+                      onAddToPlaylist: () {
+                        _showAddToPlaylistDialog(
+                          context,
+                          selectedSongs.toList(),
+                        );
+                        _exitSelection();
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
