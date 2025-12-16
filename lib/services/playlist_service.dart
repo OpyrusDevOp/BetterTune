@@ -93,6 +93,36 @@ class PlaylistService {
     await client.delete('/Items/$playlistId');
   }
 
+  Future<void> renamePlaylist(String playlistId, String newName) async {
+    // API: POST /Items/{Id}  body: {Name: newName} (or query param Name)
+    // Jellyfin usually accepts Name as a query parameter for updates too, or in body.
+    // Let's try POST /Items/{Id}?Name={Name}
+    final client = ApiClient();
+    if (client.userId == null) return;
+
+    final queryParams = {'Name': newName};
+    final uri = Uri(path: '/Items/$playlistId', queryParameters: queryParams);
+
+    await client.post(uri.toString());
+  }
+
+  Future<void> movePlaylistItem(
+    String playlistId,
+    String itemId,
+    int newIndex,
+  ) async {
+    // API: POST /Playlists/{PlaylistId}/Items/{ItemId}/Move/{NewIndex}
+    final client = ApiClient();
+    if (client.userId == null) return;
+
+    // The API might be /Playlists/{PlaylistId}/Items/{ItemId}/Move/{NewIndex}
+    // Or it uses query params.
+    // Standard Jellyfin: POST /Playlists/{Id}/Items/{ItemId}/Move/{NewIndex}
+    final uri =
+        '/Playlists/$playlistId/Items/$itemId/Move/$newIndex?UserId=${client.userId}';
+    await client.post(uri);
+  }
+
   Future<List<Song>> getPlaylistItems(String playlistId) async {
     final client = ApiClient();
     if (client.userId == null) return [];

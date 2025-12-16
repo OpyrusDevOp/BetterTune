@@ -7,6 +7,8 @@ import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/services/api_client.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
+import 'package:bettertune/presentations/utils/song_options_helper.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 
 class ArtistDetailsPage extends StatefulWidget {
   final Artist artist;
@@ -81,8 +83,31 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
               ),
               SliverToBoxAdapter(
                 child: GlobalActionButtons(
-                  onPlayAll: () => print("Play All Artist"),
-                  onShuffle: () => print("Shuffle Artist"),
+                  onPlayAll: () async {
+                    final songs = await SongsService().getSongsByArtist(
+                      widget.artist.id,
+                      widget.artist.name,
+                    );
+                    if (songs.isNotEmpty) {
+                      AudioPlayerService().setQueue(songs);
+                      if (context.mounted) {
+                        Navigator.pushNamed(context, '/player');
+                      }
+                    }
+                  },
+                  onShuffle: () async {
+                    final songs = await SongsService().getSongsByArtist(
+                      widget.artist.id,
+                      widget.artist.name,
+                    );
+                    if (songs.isNotEmpty) {
+                      final shuffled = List<Song>.from(songs)..shuffle();
+                      AudioPlayerService().setQueue(shuffled);
+                      if (context.mounted) {
+                        Navigator.pushNamed(context, '/player');
+                      }
+                    }
+                  },
                   onAddToPlaylist: () async {
                     final songs = await SongsService().getSongsByArtist(
                       widget.artist.id,
@@ -146,10 +171,23 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
                                 if (selectionMode) {
                                   onSongSelection(song);
                                 } else {
-                                  print("Play ${song.name}");
+                                  // Play this song within the context of its album
+                                  // Find index of this song in the current album list
+                                  final index = albumSongs.indexOf(song);
+                                  AudioPlayerService().setQueue(
+                                    albumSongs,
+                                    initialIndex: index,
+                                  );
                                   Navigator.of(context).pushNamed('/player');
                                 }
                               },
+                              trailing: selectionMode
+                                  ? null
+                                  : IconButton(
+                                      icon: Icon(Icons.more_vert),
+                                      onPressed: () =>
+                                          showSongOptions(context, song),
+                                    ),
                             );
                           }),
                         ],
@@ -165,7 +203,36 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
             alignment: Alignment.bottomCenter,
             child: SelectionBottomBar(
               selectionCount: selectedSongs.length,
-              onPlay: () => print("Play Selected"),
+              onPlay: () {
+                if (selectedSongs.isNotEmpty) {
+                  AudioPlayerService().setQueue(selectedSongs.toList());
+                  Navigator.pushNamed(context, '/player');
+                  setState(() {
+                    selectedSongs.clear();
+                    selectionMode = false;
+                  });
+                }
+              },
+              onAddToQueue: () async {
+                if (selectedSongs.isNotEmpty) {
+                  await AudioPlayerService().addToQueueList(
+                    selectedSongs.toList(),
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Added ${selectedSongs.length} songs to queue",
+                        ),
+                      ),
+                    );
+                  }
+                  setState(() {
+                    selectedSongs.clear();
+                    selectionMode = false;
+                  });
+                }
+              },
               onAddToPlaylist: () {
                 showAddToPlaylistDialog(context, selectedSongs.toList());
                 setState(() {

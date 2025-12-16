@@ -4,6 +4,7 @@ class SelectionBottomBar extends StatelessWidget {
   final int selectionCount;
   final VoidCallback onPlay;
   final VoidCallback onAddToPlaylist;
+  final VoidCallback onAddToQueue;
   final VoidCallback? onDelete; // Optional, mainly for playlists
 
   const SelectionBottomBar({
@@ -11,6 +12,7 @@ class SelectionBottomBar extends StatelessWidget {
     required this.selectionCount,
     required this.onPlay,
     required this.onAddToPlaylist,
+    required this.onAddToQueue,
     this.onDelete,
   });
 
@@ -58,6 +60,11 @@ class SelectionBottomBar extends StatelessWidget {
             onPressed: onPlay,
             tooltip: "Play Selection",
             icon: Icon(Icons.play_arrow_rounded, color: colorScheme.primary),
+          ),
+          IconButton(
+            onPressed: onAddToQueue,
+            tooltip: "Add to Queue",
+            icon: Icon(Icons.queue_music_rounded, color: colorScheme.primary),
           ),
           IconButton(
             onPressed: onAddToPlaylist,

@@ -2,6 +2,7 @@ import 'package:bettertune/models/artist.dart';
 import 'package:bettertune/presentations/components/artist_card.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/artist_details_page.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:bettertune/models/song.dart';
@@ -94,7 +95,52 @@ class ArtistsPageState extends State<ArtistsPage> {
                 alignment: Alignment.bottomCenter,
                 child: SelectionBottomBar(
                   selectionCount: selectedArtists.length,
-                  onPlay: () => print("Play Selected Artists"),
+                  onPlay: () async {
+                    if (selectedArtists.isNotEmpty) {
+                      List<Song> allSongs = [];
+                      for (var artist in selectedArtists) {
+                        final songs = await SongsService().getSongsByArtist(
+                          artist.id,
+                          artist.name,
+                        );
+                        allSongs.addAll(songs);
+                      }
+                      if (allSongs.isNotEmpty) {
+                        AudioPlayerService().setQueue(allSongs);
+                        if (context.mounted) {
+                          Navigator.pushNamed(context, '/player');
+                        }
+                        setState(() {
+                          selectedArtists.clear();
+                          selectionMode = false;
+                        });
+                      }
+                    }
+                  },
+                  onAddToQueue: () async {
+                    if (selectedArtists.isNotEmpty) {
+                      List<Song> allSongs = [];
+                      for (var artist in selectedArtists) {
+                        final songs = await SongsService().getSongsByArtist(
+                          artist.id,
+                          artist.name,
+                        );
+                        allSongs.addAll(songs);
+                      }
+                      if (allSongs.isNotEmpty) {
+                        await AudioPlayerService().addToQueueList(allSongs);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Added artists to queue")),
+                          );
+                        }
+                        setState(() {
+                          selectedArtists.clear();
+                          selectionMode = false;
+                        });
+                      }
+                    }
+                  },
                   onAddToPlaylist: () async {
                     List<Song> allSongs = [];
                     for (var artist in selectedArtists) {

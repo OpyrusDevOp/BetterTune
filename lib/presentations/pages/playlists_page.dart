@@ -2,6 +2,7 @@ import 'package:bettertune/models/playlist.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/playlist_details_page.dart';
 import 'package:bettertune/services/playlist_service.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/pages/song_selection_page.dart';
@@ -82,7 +83,8 @@ class PlaylistsPageState extends State<PlaylistsPage> {
                             )
                           : IconButton(
                               icon: const Icon(Icons.more_vert),
-                              onPressed: () {},
+                              onPressed: () =>
+                                  _showPlaylistOptions(context, playlist),
                             ),
                       onTap: () {
                         if (selectionMode) {
@@ -109,7 +111,50 @@ class PlaylistsPageState extends State<PlaylistsPage> {
                   alignment: Alignment.bottomCenter,
                   child: SelectionBottomBar(
                     selectionCount: selectedPlaylists.length,
-                    onPlay: () => print("Play Selected Playlists"),
+                    onPlay: () async {
+                      List<Song> allSongs = [];
+                      for (var playlist in selectedPlaylists) {
+                        final songs = await PlaylistService().getPlaylistItems(
+                          playlist.id,
+                        );
+                        allSongs.addAll(songs);
+                      }
+                      if (allSongs.isNotEmpty) {
+                        // Play Selection: Sequential
+                        await AudioPlayerService().setShuffleMode(false);
+                        await AudioPlayerService().setQueue(allSongs);
+                        if (context.mounted) {
+                          Navigator.pushNamed(context, '/player');
+                          setState(() {
+                            selectedPlaylists.clear();
+                            selectionMode = false;
+                          });
+                        }
+                      }
+                    },
+                    onAddToQueue: () async {
+                      List<Song> allSongs = [];
+                      for (var playlist in selectedPlaylists) {
+                        final songs = await PlaylistService().getPlaylistItems(
+                          playlist.id,
+                        );
+                        allSongs.addAll(songs);
+                      }
+                      if (allSongs.isNotEmpty) {
+                        await AudioPlayerService().addToQueueList(allSongs);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Added playlists to queue"),
+                            ),
+                          );
+                          setState(() {
+                            selectedPlaylists.clear();
+                            selectionMode = false;
+                          });
+                        }
+                      }
+                    },
                     onAddToPlaylist: () async {
                       List<Song> allSongs = [];
                       for (var playlist in selectedPlaylists) {
@@ -126,48 +171,7 @@ class PlaylistsPageState extends State<PlaylistsPage> {
                         selectionMode = false;
                       });
                     },
-                    onDelete: () async {
-                      if (selectedPlaylists.isEmpty) return;
-
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text("Delete Playlists?"),
-                          content: Text(
-                            "Are you sure you want to delete ${selectedPlaylists.length} playlists?",
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text("Cancel"),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text(
-                                "Delete",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirm == true) {
-                        for (var p in selectedPlaylists) {
-                          await PlaylistService().deletePlaylist(p.id);
-                        }
-                        setState(() {
-                          _playlistsFuture = PlaylistService().getPlaylists();
-                          selectedPlaylists.clear();
-                          selectionMode = false;
-                        });
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Playlists deleted")),
-                          );
-                        }
-                      }
-                    },
+                    onDelete: () => _deleteSelectedPlaylists(),
                   ),
                 ),
               ],
@@ -276,5 +280,212 @@ class PlaylistsPageState extends State<PlaylistsPage> {
         selectionMode = false;
       }
     });
+  }
+
+  void _showPlaylistOptions(BuildContext context, Playlist playlist) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.play_arrow),
+              title: const Text('Play'),
+              onTap: () {
+                Navigator.pop(context);
+                _playPlaylist(playlist, shuffle: false);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.shuffle),
+              title: const Text('Shuffle'),
+              onTap: () {
+                Navigator.pop(context);
+                _playPlaylist(playlist, shuffle: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.queue_music),
+              title: const Text('Add to Queue'),
+              onTap: () {
+                Navigator.pop(context);
+                _addToQueue(playlist);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.playlist_add),
+              title: const Text('Add to Playlist'),
+              onTap: () {
+                Navigator.pop(context);
+                _addToPlaylist(playlist);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Rename'),
+              onTap: () {
+                Navigator.pop(context);
+                _renamePlaylist(playlist);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteSinglePlaylist(playlist);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _playPlaylist(Playlist playlist, {required bool shuffle}) async {
+    final songs = await PlaylistService().getPlaylistItems(playlist.id);
+    if (songs.isNotEmpty) {
+      await AudioPlayerService().setShuffleMode(shuffle);
+      await AudioPlayerService().setQueue(songs);
+      if (mounted) {
+        Navigator.pushNamed(context, '/player');
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Playlist is empty")));
+      }
+    }
+  }
+
+  Future<void> _addToQueue(Playlist playlist) async {
+    final songs = await PlaylistService().getPlaylistItems(playlist.id);
+    if (songs.isNotEmpty) {
+      await AudioPlayerService().addToQueueList(songs);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Added to queue")));
+      }
+    }
+  }
+
+  Future<void> _addToPlaylist(Playlist playlist) async {
+    final songs = await PlaylistService().getPlaylistItems(playlist.id);
+    if (mounted) {
+      showAddToPlaylistDialog(context, songs);
+    }
+  }
+
+  void _renamePlaylist(Playlist playlist) {
+    final controller = TextEditingController(text: playlist.name);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Rename Playlist"),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: "Name"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (controller.text.isNotEmpty) {
+                  await PlaylistService().renamePlaylist(
+                    playlist.id,
+                    controller.text,
+                  );
+                  setState(() {
+                    _playlistsFuture = PlaylistService().getPlaylists();
+                  });
+                  if (context.mounted) Navigator.pop(context);
+                }
+              },
+              child: const Text("Rename"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteSinglePlaylist(Playlist playlist) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Playlist?"),
+        content: Text("Delete '${playlist.name}'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await PlaylistService().deletePlaylist(playlist.id);
+      setState(() {
+        _playlistsFuture = PlaylistService().getPlaylists();
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Playlist deleted")));
+      }
+    }
+  }
+
+  Future<void> _deleteSelectedPlaylists() async {
+    if (selectedPlaylists.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Playlists?"),
+        content: Text(
+          "Are you sure you want to delete ${selectedPlaylists.length} playlists?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      for (var p in selectedPlaylists) {
+        await PlaylistService().deletePlaylist(p.id);
+      }
+      setState(() {
+        _playlistsFuture = PlaylistService().getPlaylists();
+        selectedPlaylists.clear();
+        selectionMode = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Playlists deleted")));
+      }
+    }
   }
 }
