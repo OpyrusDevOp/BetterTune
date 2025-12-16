@@ -224,11 +224,17 @@ class AudioPlayerService {
   // --- Navigation & Modes ---
 
   Future<void> skipToNext() async {
-    if (_player.hasNext) {
-      await _player.seekToNext();
-    } else {
-      // Loop back to start if repeat all or even if standard playlist end (implied requirement "Next: always play the next... or get back to first")
-      await _player.seek(Duration.zero, index: 0);
+    final sequence = _player.sequence;
+    final currentIndex = _player.currentIndex;
+
+    if (sequence != null && currentIndex != null) {
+      if (currentIndex < sequence.length - 1) {
+        // Go to next song
+        await _player.seek(Duration.zero, index: currentIndex + 1);
+      } else {
+        // At the last song, wrap around to first
+        await _player.seek(Duration.zero, index: 0);
+      }
     }
   }
 
