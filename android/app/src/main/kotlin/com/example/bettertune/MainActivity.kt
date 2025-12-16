@@ -37,9 +37,28 @@ class MainActivity : FlutterActivity(){
     }
 
     private fun handleWidgetIntent(intent: Intent?) {
-        if (intent?.action == "widget_action") {
-            val action = intent.getStringExtra("action")
-            // The action will be handled by HomeWidgetService in Flutter
+        // Handle Action from Widget (Deep link style or Extras)
+        val action = intent?.getStringExtra("action")
+        val songId = intent?.getStringExtra("songId")
+        
+        if (action == "play_queue_item" && songId != null) {
+            // Send to Dart via MethodChannel
+            io.flutter.plugin.common.MethodChannel(
+                flutterEngine!!.dartExecutor.binaryMessenger,
+                CHANNEL
+            ).invokeMethod("playSongById", songId)
+        }
+        
+        // Also support data URI if we used that
+        val data = intent?.data
+        if (data != null && data.toString().startsWith("bettertune://play_song/")) {
+             val id = data.lastPathSegment
+             if (id != null) {
+                  io.flutter.plugin.common.MethodChannel(
+                    flutterEngine!!.dartExecutor.binaryMessenger,
+                    CHANNEL
+                ).invokeMethod("playSongById", id)
+             }
         }
     }
 }

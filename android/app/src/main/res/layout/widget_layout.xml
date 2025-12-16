@@ -9,6 +9,7 @@
 
     <!-- Header with App Name -->
     <TextView
+        android:id="@+id/widget_title_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="BetterTune"
@@ -17,13 +18,16 @@
         android:textColor="#00A4DC"
         android:layout_marginBottom="12dp" />
 
-    <!-- Now Playing Section -->
+    <!-- Now Playing Section (Clickable to open app) -->
     <LinearLayout
+        android:id="@+id/widget_container_main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="12dp"
+        android:clickable="true"
+        android:focusable="true">
 
         <!-- Album Art -->
         <ImageView
@@ -77,6 +81,16 @@
         android:layout_marginBottom="12dp">
 
         <ImageButton
+            android:id="@+id/widget_shuffle_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_shuffle"
+            android:background="@android:color/transparent"
+            android:contentDescription="Shuffle"
+            android:tint="#FFFFFF"
+            android:layout_marginEnd="16dp" />
+
+        <ImageButton
             android:id="@+id/widget_previous_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -102,7 +116,17 @@
             android:layout_height="48dp"
             android:src="@drawable/ic_skip_next"
             android:background="@android:color/transparent"
-            android:contentDescription="Next"
+            android:contentDescription="Next" 
+            android:tint="#FFFFFF"
+            android:layout_marginEnd="16dp" />
+
+        <ImageButton
+            android:id="@+id/widget_repeat_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_repeat"
+            android:background="@android:color/transparent"
+            android:contentDescription="Repeat"
             android:tint="#FFFFFF" />
 
     </LinearLayout>

@@ -6,6 +6,7 @@ import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import es.antonborri.home_widget.HomeWidgetPlugin
 import org.json.JSONArray
+import android.net.Uri
 
 class WidgetQueueService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -21,6 +22,7 @@ class WidgetQueueFactory(
     private var queueItems: List<QueueItem> = emptyList()
 
     data class QueueItem(
+        val id: String,
         val title: String,
         val artist: String
     )
@@ -42,10 +44,12 @@ class WidgetQueueFactory(
                 val jsonArray = JSONArray(queueDataString)
                 val items = mutableListOf<QueueItem>()
                 
-                for (i in 0 until jsonArray.length().coerceAtMost(10)) { // Limit to 10 items
+                // Removed limit or increased it, showing all available in json
+                for (i in 0 until jsonArray.length()) { 
                     val item = jsonArray.getJSONObject(i)
                     items.add(
                         QueueItem(
+                            id = item.getString("id"),
                             title = item.getString("title"),
                             artist = item.getString("artist")
                         )
@@ -75,6 +79,25 @@ class WidgetQueueFactory(
             val item = queueItems[position]
             views.setTextViewText(R.id.queue_item_title, item.title)
             views.setTextViewText(R.id.queue_item_artist, item.artist)
+            
+            // Highlight current song
+            val widgetData = HomeWidgetPlugin.getData(context)
+            val currentSongId = widgetData.getString("current_song_id", "")
+            
+            if (item.id == currentSongId) {
+                views.setTextColor(R.id.queue_item_title, android.graphics.Color.parseColor("#00A4DC"))
+            } else {
+                views.setTextColor(R.id.queue_item_title, android.graphics.Color.WHITE)
+            }
+
+            // Fill In Intent for Click Interaction
+            val fillInIntent = Intent().apply {
+                putExtra("action", "play_queue_item")
+                putExtra("songId", item.id)
+                // We also set a data URI to make it unique if helpful, but extras merge too.
+                data = Uri.parse("bettertune://play_song/${item.id}") 
+            }
+            views.setOnClickFillInIntent(R.id.queue_item_root, fillInIntent)
         }
         
         return views

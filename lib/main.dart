@@ -5,6 +5,7 @@ import 'package:bettertune/presentations/screens/player_screen.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:bettertune/services/home_widget_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
@@ -30,6 +31,18 @@ Future<void> main() async {
     if (initialUri != null) {
       await HomeWidgetService.backgroundCallback(initialUri);
     }
+
+    // Setup Method Channel for Native->Dart calls (Queue Click)
+    const channel = MethodChannel('com.example.bettertune/widget');
+    channel.setMethodCallHandler((call) async {
+      if (call.method == 'playSongById') {
+        final songId = call.arguments as String;
+        await HomeWidgetService().handleWidgetAction(
+          HomeWidgetService.playQueueItemAction,
+          songId: songId,
+        );
+      }
+    });
   }
 
   runApp(MyApp(isLoggedIn: isLoggedIn));
