@@ -20,32 +20,78 @@ class SearchService {
   factory SearchService() => _instance;
   SearchService._internal();
 
-  Future<SearchResults> search(String query) async {
+  Future<SearchResults> search(
+    String query, {
+    int limit = 20,
+    int startIndex = 0,
+    bool includeSongs = true,
+    bool includeAlbums = true,
+    bool includeArtists = true,
+  }) async {
     if (query.isEmpty) return SearchResults();
 
     final client = ApiClient();
     if (client.userId == null) return SearchResults();
 
-    final Future<List<Song>> songsFuture = _searchSongs(client, query);
-    final Future<List<Album>> albumsFuture = _searchAlbums(client, query);
-    final Future<List<Artist>> artistsFuture = _searchArtists(client, query);
+    final futures = <Future<dynamic>>[];
 
-    final results = await Future.wait([
-      songsFuture,
-      albumsFuture,
-      artistsFuture,
-    ]);
+    // We can conditionally add futures based on what we want to fetch
+    // Use indices to map results back, or just use separate calls if simpler.
+    // For simplicity, let's keep running parallel but respect flags.
 
-    return SearchResults(
-      songs: results[0] as List<Song>,
-      albums: results[1] as List<Album>,
-      artists: results[2] as List<Artist>,
-    );
+    // Actually, to make it clean, let's just await conditionally.
+
+    List<Song> songs = [];
+    List<Album> albums = [];
+    List<Artist> artists = [];
+
+    if (includeSongs) {
+      futures.add(
+        _searchSongs(
+          client,
+          query,
+          limit,
+          startIndex,
+        ).then((val) => songs = val),
+      );
+    }
+    if (includeAlbums) {
+      // Albums usually don't need deep pagination in mixed view, but let's support it
+      // If we are paging, we might only want to page songs after the first load.
+      // But let's allow paging everything if needed.
+      futures.add(
+        _searchAlbums(
+          client,
+          query,
+          limit,
+          startIndex,
+        ).then((val) => albums = val),
+      );
+    }
+    if (includeArtists) {
+      futures.add(
+        _searchArtists(
+          client,
+          query,
+          limit,
+          startIndex,
+        ).then((val) => artists = val),
+      );
+    }
+
+    await Future.wait(futures);
+
+    return SearchResults(songs: songs, albums: albums, artists: artists);
   }
 
-  Future<List<Song>> _searchSongs(ApiClient client, String query) async {
+  Future<List<Song>> _searchSongs(
+    ApiClient client,
+    String query,
+    int limit,
+    int startIndex,
+  ) async {
     final result = await client.get(
-      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=Audio&SearchTerm=$query&Limit=20&Fields=MediaStreams,ParentId',
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=Audio&SearchTerm=$query&Limit=$limit&StartIndex=$startIndex&Fields=MediaStreams,ParentId',
     );
 
     if (result != null && result['Items'] != null) {
@@ -62,9 +108,14 @@ class SearchService {
     return [];
   }
 
-  Future<List<Album>> _searchAlbums(ApiClient client, String query) async {
+  Future<List<Album>> _searchAlbums(
+    ApiClient client,
+    String query,
+    int limit,
+    int startIndex,
+  ) async {
     final result = await client.get(
-      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=MusicAlbum&SearchTerm=$query&Limit=10',
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=MusicAlbum&SearchTerm=$query&Limit=$limit&StartIndex=$startIndex',
     );
 
     if (result != null && result['Items'] != null) {
@@ -80,9 +131,14 @@ class SearchService {
     return [];
   }
 
-  Future<List<Artist>> _searchArtists(ApiClient client, String query) async {
+  Future<List<Artist>> _searchArtists(
+    ApiClient client,
+    String query,
+    int limit,
+    int startIndex,
+  ) async {
     final result = await client.get(
-      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=MusicArtist&SearchTerm=$query&Limit=10',
+      '/Users/${client.userId}/Items?Recursive=true&IncludeItemTypes=MusicArtist&SearchTerm=$query&Limit=$limit&StartIndex=$startIndex',
     );
 
     if (result != null && result['Items'] != null) {

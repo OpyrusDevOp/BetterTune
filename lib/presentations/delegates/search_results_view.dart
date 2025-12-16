@@ -9,17 +9,15 @@ import 'package:bettertune/presentations/pages/details/artist_details_page.dart'
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:flutter/material.dart';
 
+import 'package:bettertune/services/search_service.dart'; // Added import
+
 class SearchResultsView extends StatefulWidget {
-  final List<Song> songs;
-  final List<Album> albums;
-  final List<Artist> artists;
+  final String query;
   final Function(BuildContext) onClose;
 
   const SearchResultsView({
     super.key,
-    required this.songs,
-    required this.albums,
-    required this.artists,
+    required this.query,
     required this.onClose,
   });
 
@@ -31,17 +29,108 @@ class _SearchResultsViewState extends State<SearchResultsView> {
   bool selectionMode = false;
   Set<dynamic> selectedItems = {};
 
+  // Data State
+  List<Song> songs = [];
+  List<Album> albums = [];
+  List<Artist> artists = [];
+
+  // Pagination State
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
+  bool _hasMore = true;
+  int _songStartIndex = 0;
+  final int _limit = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInitialData();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoading &&
+        _hasMore) {
+      _fetchMoreSongs();
+    }
+  }
+
+  Future<void> _fetchInitialData() async {
+    setState(() => _isLoading = true);
+    try {
+      final results = await SearchService().search(
+        widget.query,
+        limit: _limit,
+        startIndex: 0,
+      );
+
+      setState(() {
+        artists = results.artists;
+        albums = results.albums;
+        songs = results.songs;
+        _songStartIndex = results.songs.length;
+        // If we got fewer songs than limit, assume no more
+        if (results.songs.length < _limit) {
+          _hasMore = false;
+        }
+      });
+    } catch (e) {
+      debugPrint("Error searching: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchMoreSongs() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      // Fetch only songs for pagination
+      final results = await SearchService().search(
+        widget.query,
+        limit: _limit,
+        startIndex: _songStartIndex,
+        includeAlbums: false,
+        includeArtists: false,
+      );
+
+      setState(() {
+        songs.addAll(results.songs);
+        _songStartIndex += results.songs.length;
+        if (results.songs.length < _limit) {
+          _hasMore = false;
+        }
+      });
+    } catch (e) {
+      debugPrint("Error searching more songs: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.songs.isEmpty &&
-        widget.albums.isEmpty &&
-        widget.artists.isEmpty) {
+    if (songs.isEmpty && albums.isEmpty && artists.isEmpty && _isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (songs.isEmpty && albums.isEmpty && artists.isEmpty) {
       return Center(child: Text("No results found"));
     }
 
     return Stack(
       children: [
         ListView(
+          controller: _scrollController,
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
@@ -50,24 +139,30 @@ class _SearchResultsViewState extends State<SearchResultsView> {
           ),
           children: [
             // Artists Section
-            if (widget.artists.isNotEmpty) ...[
+            if (artists.isNotEmpty) ...[
               _buildSectionHeader(context, "Artists"),
-              ...widget.artists.map((artist) => _buildArtistTile(artist)),
+              ...artists.map((artist) => _buildArtistTile(artist)),
               SizedBox(height: 16),
             ],
 
             // Albums Section
-            if (widget.albums.isNotEmpty) ...[
+            if (albums.isNotEmpty) ...[
               _buildSectionHeader(context, "Albums"),
-              ...widget.albums.map((album) => _buildAlbumTile(album)),
+              ...albums.map((album) => _buildAlbumTile(album)),
               SizedBox(height: 16),
             ],
 
             // Songs Section
-            if (widget.songs.isNotEmpty) ...[
+            if (songs.isNotEmpty) ...[
               _buildSectionHeader(context, "Songs"),
-              ...widget.songs.map((song) => _buildSongTile(song)),
+              ...songs.map((song) => _buildSongTile(song)),
             ],
+
+            if (_isLoading && songs.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
           ],
         ),
         if (selectionMode)
