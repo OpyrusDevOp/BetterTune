@@ -25,14 +25,11 @@ class _SongSelectionPageState extends State<SongSelectionPage> {
   Set<Song> selectedSongs = {};
   bool _isLoading = false;
   bool _hasMore = true;
-  int _startIndex = 0;
-  final int _limit = 50;
 
   @override
   void initState() {
     super.initState();
     _fetchSongs();
-    _scrollController.addListener(_scrollListener);
   }
 
   @override
@@ -41,32 +38,18 @@ class _SongSelectionPageState extends State<SongSelectionPage> {
     super.dispose();
   }
 
-  void _scrollListener() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoading &&
-        _hasMore) {
-      _fetchSongs();
-    }
-  }
-
   Future<void> _fetchSongs() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
     try {
-      final newSongs = await SongsService().getSongs(
-        limit: _limit,
-        startIndex: _startIndex,
-      );
+      final newSongs = await SongsService().getSongs();
 
       if (mounted) {
         setState(() {
-          songs.addAll(newSongs);
-          _startIndex += newSongs.length;
-          if (newSongs.length < _limit) {
-            _hasMore = false;
-          }
+          songs = newSongs;
+          // No pagination needed
+          _hasMore = false;
         });
       }
     } catch (e) {

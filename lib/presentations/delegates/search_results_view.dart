@@ -34,84 +34,31 @@ class _SearchResultsViewState extends State<SearchResultsView> {
   List<Album> albums = [];
   List<Artist> artists = [];
 
-  // Pagination State
-  final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  bool _hasMore = true;
-  int _songStartIndex = 0;
-  final int _limit = 20;
 
   @override
   void initState() {
     super.initState();
-    _fetchInitialData();
-    _scrollController.addListener(_scrollListener);
+    _performSearch();
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollListener() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoading &&
-        _hasMore) {
-      _fetchMoreSongs();
-    }
-  }
-
-  Future<void> _fetchInitialData() async {
+  Future<void> _performSearch() async {
     setState(() => _isLoading = true);
     try {
-      final results = await SearchService().search(
-        widget.query,
-        limit: _limit,
-        startIndex: 0,
-      );
+      final results = await SearchService().search(widget.query);
 
       setState(() {
         artists = results.artists;
         albums = results.albums;
         songs = results.songs;
-        _songStartIndex = results.songs.length;
-        // If we got fewer songs than limit, assume no more
-        if (results.songs.length < _limit) {
-          _hasMore = false;
-        }
       });
     } catch (e) {
       debugPrint("Error searching: $e");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _fetchMoreSongs() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    try {
-      // Fetch only songs for pagination
-      final results = await SearchService().search(
-        widget.query,
-        limit: _limit,
-        startIndex: _songStartIndex,
-        includeAlbums: false,
-        includeArtists: false,
-      );
-
-      setState(() {
-        songs.addAll(results.songs);
-        _songStartIndex += results.songs.length;
-        if (results.songs.length < _limit) {
-          _hasMore = false;
-        }
-      });
-    } catch (e) {
-      debugPrint("Error searching more songs: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -130,7 +77,6 @@ class _SearchResultsViewState extends State<SearchResultsView> {
     return Stack(
       children: [
         ListView(
-          controller: _scrollController,
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
@@ -157,12 +103,6 @@ class _SearchResultsViewState extends State<SearchResultsView> {
               _buildSectionHeader(context, "Songs"),
               ...songs.map((song) => _buildSongTile(song)),
             ],
-
-            if (_isLoading && songs.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(child: CircularProgressIndicator()),
-              ),
           ],
         ),
         if (selectionMode)

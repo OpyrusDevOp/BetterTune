@@ -23,7 +23,7 @@ class AlbumsPageState extends State<AlbumsPage> {
   @override
   void initState() {
     super.initState();
-    _albumsFuture = SongsService().getAlbums(limit: 100);
+    _albumsFuture = SongsService().getAlbums();
   }
 
   @override

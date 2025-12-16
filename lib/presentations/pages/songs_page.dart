@@ -1,5 +1,6 @@
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/services/songs_service.dart';
+import 'package:bettertune/services/sync_service.dart'; // Added SyncService
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
@@ -15,110 +16,104 @@ class SongsPage extends StatefulWidget {
 
 class _SongsPageStateSongsPage extends State<SongsPage> {
   bool selectionMode = false;
-  late Future<List<Song>>
-  _songsFuture; // Removed in favor of manual list management
   List<Song> songs = [];
   Set<Song> selectedSongs = {};
 
-  // Pagination State
-  final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  bool _hasMore = true;
-  int _startIndex = 0;
-  final int _limit = 50; // Fetch 50 at a time
 
   @override
   void initState() {
     super.initState();
-    _fetchSongs(); // Initial fetch
-    _scrollController.addListener(_scrollListener);
+    _loadSongs();
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _scrollListener() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoading &&
-        _hasMore) {
-      _fetchSongs();
-    }
-  }
-
-  Future<void> _fetchSongs({bool isRefresh = false}) async {
-    if (_isLoading) return;
+  Future<void> _loadSongs() async {
     setState(() => _isLoading = true);
-
-    if (isRefresh) {
-      _startIndex = 0;
-      _hasMore = true;
-      songs.clear();
-    }
-
     try {
-      final newSongs = await SongsService().getSongs(
-        limit: _limit,
-        startIndex: _startIndex,
-      );
-
+      final localSongs = await SongsService().getSongs();
       setState(() {
-        if (isRefresh) {
-          songs = newSongs;
-        } else {
-          songs.addAll(newSongs);
-        }
-
-        _startIndex += newSongs.length;
-        if (newSongs.length < _limit) {
-          _hasMore = false;
-        }
+        songs = localSongs;
       });
+
+      // If empty, suggest sync or auto-sync?
+      // Let's just user helper manually sync for now or empty state handles it.
     } catch (e) {
-      debugPrint("Error fetching songs: $e");
+      debugPrint("Error loading songs: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _triggerSync() async {
+    if (SyncService().isSyncing) return;
+
+    // Show progress dialog or snackbar
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    await SyncService().syncLibrary((status) {
+      debugPrint("Sync: $status");
+    });
+
+    if (mounted) {
+      Navigator.pop(context); // Close dialog
+      _loadSongs(); // Reload from DB
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PopScope<void>(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, result) {
-        if (didPop) return;
-        if (selectedSongs.isNotEmpty) {
-          setState(() {
-            selectedSongs.clear();
-            selectionMode = false;
-          });
-          return;
-        }
-      },
-      child: RefreshIndicator(
-        onRefresh: () async => await _fetchSongs(isRefresh: true),
+    return Scaffold(
+      appBar: AppBar(
+        excludeHeaderSemantics: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.sync),
+            onPressed: _triggerSync,
+            tooltip: "Sync Library",
+          ),
+        ],
+      ),
+      body: PopScope<void>(
+        canPop: false,
+        onPopInvokedWithResult: (bool didPop, result) {
+          if (didPop) return;
+          if (selectedSongs.isNotEmpty) {
+            setState(() {
+              selectedSongs.clear();
+              selectionMode = false;
+            });
+            return;
+          }
+        },
         child: Stack(
           children: [
             if (songs.isEmpty && _isLoading)
               const Center(child: CircularProgressIndicator())
             else if (songs.isEmpty)
-              const Center(child: Text("No songs found."))
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("No songs found locally."),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _triggerSync,
+                      child: Text("Sync Library"),
+                    ),
+                  ],
+                ),
+              )
             else
               ListView.builder(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: songs.length + (_hasMore ? 1 : 0),
                 padding: const EdgeInsets.only(bottom: 100),
+                itemCount: songs.length,
                 itemBuilder: (context, index) {
-                  if (index == songs.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
                   var song = songs[index];
                   var isSelected = selectedSongs.contains(song);
 
