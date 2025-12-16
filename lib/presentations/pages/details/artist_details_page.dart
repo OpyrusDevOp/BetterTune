@@ -203,7 +203,36 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
             alignment: Alignment.bottomCenter,
             child: SelectionBottomBar(
               selectionCount: selectedSongs.length,
-              onPlay: () => print("Play Selected"),
+              onPlay: () {
+                if (selectedSongs.isNotEmpty) {
+                  AudioPlayerService().setQueue(selectedSongs.toList());
+                  Navigator.pushNamed(context, '/player');
+                  setState(() {
+                    selectedSongs.clear();
+                    selectionMode = false;
+                  });
+                }
+              },
+              onAddToQueue: () async {
+                if (selectedSongs.isNotEmpty) {
+                  await AudioPlayerService().addToQueueList(
+                    selectedSongs.toList(),
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Added ${selectedSongs.length} songs to queue",
+                        ),
+                      ),
+                    );
+                  }
+                  setState(() {
+                    selectedSongs.clear();
+                    selectionMode = false;
+                  });
+                }
+              },
               onAddToPlaylist: () {
                 showAddToPlaylistDialog(context, selectedSongs.toList());
                 setState(() {

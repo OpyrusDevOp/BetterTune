@@ -3,6 +3,7 @@ import 'package:bettertune/presentations/components/album_card.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
 import 'package:bettertune/presentations/pages/details/album_details_page.dart';
 import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:flutter/material.dart';
@@ -96,7 +97,50 @@ class AlbumsPageState extends State<AlbumsPage> {
                 alignment: Alignment.bottomCenter,
                 child: SelectionBottomBar(
                   selectionCount: selectedAlbums.length,
-                  onPlay: () => print("Play Selected Albums"),
+                  onPlay: () async {
+                    if (selectedAlbums.isNotEmpty) {
+                      List<Song> allSongs = [];
+                      for (var album in selectedAlbums) {
+                        final songs = await SongsService().getSongsByAlbum(
+                          album.id,
+                        );
+                        allSongs.addAll(songs);
+                      }
+                      if (allSongs.isNotEmpty) {
+                        AudioPlayerService().setQueue(allSongs);
+                        if (context.mounted) {
+                          Navigator.pushNamed(context, '/player');
+                        }
+                        setState(() {
+                          selectedAlbums.clear();
+                          selectionMode = false;
+                        });
+                      }
+                    }
+                  },
+                  onAddToQueue: () async {
+                    if (selectedAlbums.isNotEmpty) {
+                      List<Song> allSongs = [];
+                      for (var album in selectedAlbums) {
+                        final songs = await SongsService().getSongsByAlbum(
+                          album.id,
+                        );
+                        allSongs.addAll(songs);
+                      }
+                      if (allSongs.isNotEmpty) {
+                        await AudioPlayerService().addToQueueList(allSongs);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Added albums to queue")),
+                          );
+                        }
+                        setState(() {
+                          selectedAlbums.clear();
+                          selectionMode = false;
+                        });
+                      }
+                    }
+                  },
                   onAddToPlaylist: () async {
                     List<Song> allSongs = [];
                     for (var album in selectedAlbums) {

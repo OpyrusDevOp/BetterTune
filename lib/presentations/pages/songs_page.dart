@@ -146,8 +146,28 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
                   child: SelectionBottomBar(
                     selectionCount: selectedSongs.length,
                     onPlay: () {
-                      print("Play ${selectedSongs.length} items");
-                      _exitSelection();
+                      if (selectedSongs.isNotEmpty) {
+                        AudioPlayerService().setQueue(selectedSongs.toList());
+                        Navigator.pushNamed(context, '/player');
+                        _exitSelection();
+                      }
+                    },
+                    onAddToQueue: () async {
+                      if (selectedSongs.isNotEmpty) {
+                        await AudioPlayerService().addToQueueList(
+                          selectedSongs.toList(),
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Added ${selectedSongs.length} songs to queue",
+                              ),
+                            ),
+                          );
+                        }
+                        _exitSelection();
+                      }
                     },
                     onAddToPlaylist: () {
                       showAddToPlaylistDialog(context, selectedSongs.toList());

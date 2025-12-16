@@ -248,12 +248,12 @@ class AudioPlayerService {
 
   Future<void> toggleShuffle() async {
     final enable = !(_player.shuffleModeEnabled);
+    await setShuffleMode(enable);
+  }
+
+  Future<void> setShuffleMode(bool enable) async {
     if (enable) {
       await _player.setShuffleModeEnabled(true);
-      // Requirement: "current played song is always the first"
-      // just_audio keeps the current song playing when shuffling.
-      // But we might want to ensure the visual queue matches.
-      // The default just_audio shuffle just shuffles the playback order indices.
     } else {
       await _player.setShuffleModeEnabled(false);
     }

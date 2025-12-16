@@ -2,6 +2,7 @@ import 'package:bettertune/presentations/dialogs/add_to_playlist_dialog.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/presentations/components/song_tile.dart';
 import 'package:bettertune/presentations/components/selection_bottom_bar.dart';
+import 'package:bettertune/services/audio_player_service.dart';
 import 'package:bettertune/services/songs_service.dart';
 import 'package:flutter/material.dart';
 
@@ -87,8 +88,28 @@ class FavouritesPageState extends State<FavouritesPage> {
                     child: SelectionBottomBar(
                       selectionCount: selectedSongs.length,
                       onPlay: () {
-                        print("Play ${selectedSongs.length} items");
-                        _exitSelection();
+                        if (selectedSongs.isNotEmpty) {
+                          AudioPlayerService().setQueue(selectedSongs.toList());
+                          Navigator.pushNamed(context, '/player');
+                          _exitSelection();
+                        }
+                      },
+                      onAddToQueue: () async {
+                        if (selectedSongs.isNotEmpty) {
+                          await AudioPlayerService().addToQueueList(
+                            selectedSongs.toList(),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Added ${selectedSongs.length} songs to queue",
+                                ),
+                              ),
+                            );
+                          }
+                          _exitSelection();
+                        }
                       },
                       onAddToPlaylist: () {
                         showAddToPlaylistDialog(
