@@ -1,3 +1,6 @@
+<img width="2816" height="1536" alt="BetterTune Logo" src="https://github.com/user-attachments/assets/704034b2-1de2-4e48-9bd7-e55035652cb2" />
+
+
 # BetterTune
 
 A modern, beautiful, and feature-rich Jellyfin music client built with Flutter.
