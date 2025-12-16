@@ -3,6 +3,7 @@ import 'package:bettertune/services/database_service.dart';
 import 'package:bettertune/models/song.dart';
 import 'package:bettertune/models/album.dart';
 import 'package:bettertune/models/artist.dart';
+import 'package:bettertune/services/settings_service.dart';
 
 class SongsService {
   static final SongsService _instance = SongsService._internal();
@@ -16,12 +17,20 @@ class SongsService {
 
   /// Get direct streaming URL for a song (API)
   String getStreamUrl(String songId) {
-    // Determine Container (mp3, aac, etc) or use universal endpoint
-    // Universal: /Audio/{Id}/universal?UserId={UserId}&DeviceId={DeviceId}&MaxStreamingBitrate=140000000...
     final client = ApiClient();
     if (client.baseUrl == null) return "";
 
-    return '${client.baseUrl}/Audio/$songId/universal?UserId=${client.userId}&DeviceId=${client.deviceId}&Container=mp3,aac,m4a,flac,webma,webm,wav&TranscodingContainer=ts&TranscodingProtocol=hls&AudioCodec=aac';
+    final isDolby = SettingsService().dolbyEnabled;
+    final container = isDolby
+        ? "ac3,eac3,flac,mp3,aac,m4a,webma,webm,wav"
+        : "mp3,aac,m4a,flac,webma,webm,wav";
+    final codec = isDolby ? "aac,ac3,eac3,flac,mp3,opus" : "aac";
+
+    // For Dolby/Hi-Res, we might want higher bitrate or no bitrate limit
+    // Universal typically tries to transcode to container if not supported.
+    // If we say we support ac3, Jellyfin might pass it through.
+
+    return '${client.baseUrl}/Audio/$songId/universal?UserId=${client.userId}&DeviceId=${client.deviceId}&Container=$container&TranscodingContainer=ts&TranscodingProtocol=hls&AudioCodec=$codec';
   }
 
   /// Fetch Albums (Local DB)

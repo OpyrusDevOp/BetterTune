@@ -4,6 +4,7 @@ import 'package:bettertune/presentations/pages/artists_page.dart';
 import 'package:bettertune/presentations/pages/favourites_page.dart';
 import 'package:bettertune/presentations/pages/playlists_page.dart';
 import 'package:bettertune/presentations/pages/songs_page.dart';
+import 'package:bettertune/presentations/pages/settings_page.dart';
 
 import 'package:bettertune/presentations/delegates/global_search_delegate.dart';
 import 'package:bettertune/services/auth_service.dart';
@@ -95,7 +96,13 @@ class MainScreenState extends State<MainScreen> {
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('Settings'),
-                onTap: () async {},
+                onTap: () async {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SettingsPage()),
+                  );
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.logout),

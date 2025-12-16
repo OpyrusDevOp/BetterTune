@@ -70,7 +70,7 @@ class _SongsPageStateSongsPage extends State<SongsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        excludeHeaderSemantics: true,
+        forceMaterialTransparency: true,
         actions: [
           IconButton(
             icon: Icon(Icons.sync),
