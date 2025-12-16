@@ -3,7 +3,9 @@ import 'package:bettertune/services/auth_service.dart';
 import 'package:bettertune/presentations/screens/main_screen.dart';
 import 'package:bettertune/presentations/screens/player_screen.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
+import 'package:bettertune/services/home_widget_service.dart';
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> main() async {
@@ -18,6 +20,17 @@ Future<void> main() async {
   final authService = AuthService();
   await authService.init();
   bool isLoggedIn = authService.isLoggedIn;
+
+  // Initialize home widget
+  if (isLoggedIn) {
+    await HomeWidgetService().initialize();
+
+    // Check if app was launched from widget
+    final Uri? initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+    if (initialUri != null) {
+      await HomeWidgetService.backgroundCallback(initialUri);
+    }
+  }
 
   runApp(MyApp(isLoggedIn: isLoggedIn));
 }

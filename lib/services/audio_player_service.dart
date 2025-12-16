@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:bettertune/services/home_widget_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:bettertune/models/song.dart';
@@ -28,6 +29,9 @@ class AudioPlayerService {
   Stream<Duration?> get durationStream => _player.durationStream;
   Stream<bool> get shuffleModeEnabledStream => _player.shuffleModeEnabledStream;
   Stream<LoopMode> get loopModeStream => _player.loopModeStream;
+
+  // Synchoronous State
+  bool get isPlaying => _player.playing;
 
   // Stream for the current song based on index changes
   Stream<Song?> get currentSongStream =>
@@ -115,6 +119,7 @@ class AudioPlayerService {
         initialIndex: initialIndex,
       );
       await _player.play();
+      await HomeWidgetService().updateWidget();
     } catch (e) {
       debugPrint("Error setting queue: $e");
     }
@@ -122,6 +127,7 @@ class AudioPlayerService {
 
   Future<void> addToQueue(Song song) async {
     await addToQueueList([song]);
+    await HomeWidgetService().updateWidget();
   }
 
   Future<void> addToQueueList(List<Song> songs) async {
@@ -168,6 +174,7 @@ class AudioPlayerService {
           ConcatenatingAudioSource(children: newQueue),
         );
       }
+      await HomeWidgetService().updateWidget();
     } catch (e) {
       debugPrint("Error adding to queue: $e");
     }
@@ -181,6 +188,7 @@ class AudioPlayerService {
     if (currentSource is ConcatenatingAudioSource) {
       await currentSource.move(oldIndex, newIndex);
     }
+    await HomeWidgetService().updateWidget();
   }
 
   // --- Playback Controls ---
@@ -188,6 +196,7 @@ class AudioPlayerService {
   // Retaining simple playSong for backward compatibility or single plays (creates a queue of 1)
   Future<void> playSong(Song song) async {
     await setQueue([song]);
+    await HomeWidgetService().updateWidget();
   }
 
   // Jumps to a specific song in the current queue if it exists
@@ -203,22 +212,27 @@ class AudioPlayerService {
         }
       }
     }
+    await HomeWidgetService().updateWidget();
   }
 
   Future<void> play() async {
     await _player.play();
+    await HomeWidgetService().updateWidget();
   }
 
   Future<void> pause() async {
     await _player.pause();
+    await HomeWidgetService().updateWidget();
   }
 
   Future<void> stop() async {
     await _player.stop();
+    await HomeWidgetService().updateWidget();
   }
 
   Future<void> seek(Duration position) async {
     await _player.seek(position);
+    await HomeWidgetService().updateWidget();
   }
 
   // --- Navigation & Modes ---
