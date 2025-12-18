@@ -40,7 +40,7 @@ BetterTune uses a modular Service-Oriented Architecture to separate concerns and
 
 ### Download Release
 
-Checkout the latest release : [Here](https://github.com/OpyrusDevOp/BetterTune/release)
+Checkout the latest release : [Here](https://github.com/OpyrusDevOp/BetterTune/releases)
 
 ### BUILD FROM SOURCE
 
