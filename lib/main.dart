@@ -4,6 +4,7 @@ import 'package:bettertune/presentations/screens/main_screen.dart';
 import 'package:bettertune/presentations/screens/player_screen.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
 import 'package:bettertune/services/home_widget_service.dart';
+import 'package:bettertune/services/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
@@ -45,6 +46,9 @@ Future<void> main() async {
     });
   }
 
+  // Initialize Settings
+  await SettingsService().init();
+
   runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
@@ -52,18 +56,34 @@ class MyApp extends StatelessWidget {
   final bool isLoggedIn;
   const MyApp({super.key, required this.isLoggedIn});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Better Tune',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.system,
-      home: AuthService().isLoggedIn
-          ? SafeArea(child: MainScreen())
-          : OnboardingScreen(),
-      routes: {'/player': (context) => const PlayerScreen()},
+    return AnimatedBuilder(
+      animation: SettingsService(),
+      builder: (context, child) {
+        final bgColor = SettingsService().backgroundColor;
+
+        // Create custom theme based on selection
+        // We override the scaffold background color
+        // We assume Dark Mode primarily as requested "background color/image" usually implies custom override
+        // But let's respect the base theme structure if possible.
+
+        final customTheme = darkTheme.copyWith(
+          scaffoldBackgroundColor: bgColor,
+          // Start with dark theme base, override bg
+        );
+
+        return MaterialApp(
+          title: 'Better Tune',
+          theme: customTheme, // For now forcing dark-ish theme with custom BG
+          darkTheme: customTheme,
+          themeMode: ThemeMode.dark, // Enforce dark mode with custom BG for now
+          home: SafeArea(
+            child: AuthService().isLoggedIn ? MainScreen() : OnboardingScreen(),
+          ),
+          routes: {'/player': (context) => const PlayerScreen()},
+        );
+      },
     );
   }
 }

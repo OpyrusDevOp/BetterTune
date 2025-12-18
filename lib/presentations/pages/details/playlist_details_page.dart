@@ -36,6 +36,7 @@ class _PlaylistDetailsPageState extends State<PlaylistDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.playlist.name),
+        forceMaterialTransparency: true,
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {

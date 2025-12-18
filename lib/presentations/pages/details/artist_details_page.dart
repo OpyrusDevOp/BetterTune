@@ -154,10 +154,7 @@ class _ArtistDetailsPageState extends State<ArtistDetailsPage> {
                             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                             child: Text(
                               albumName,
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    color: Theme.of(context).primaryColor,
-                                  ),
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
                           ...albumSongs.map((song) {
