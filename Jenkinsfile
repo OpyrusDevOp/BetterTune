@@ -25,6 +25,9 @@ pipeline {
                 // sh 'flutter test'
                 sh 'flutter build web --release --base-href /'
 
+                // Fix ownership — Flutter ran as root, jenkins user is UID 1000
+                sh 'chown -R 1000:1000 build/'
+
                 // Pass the build output to the next stage
                 stash name: 'web-build', includes: 'build/web/**'
             }
