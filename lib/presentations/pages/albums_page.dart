@@ -61,33 +61,40 @@ class AlbumsPageState extends State<AlbumsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(15.0),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 10,
-                  ),
-                  itemCount: albums.length,
-                  padding: const EdgeInsets.only(bottom: 100),
-                  itemBuilder: (context, index) {
-                    final album = albums[index];
-                    return AlbumCard(
-                      album: album,
-                      selectionMode: selectionMode,
-                      isSelect: selectedAlbums.contains(album),
-                      onSelection: () => onAlbumSelection(album),
-                      onPress: () {
-                        if (selectionMode) {
-                          onAlbumSelection(album);
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  AlbumDetailsPage(album: album),
-                            ),
-                          );
-                        }
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth;
+                    final cols = w > 1200 ? 6 : w > 800 ? 4 : w > 500 ? 3 : 2;
+                    return GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 0.75,
+                      ),
+                      itemCount: albums.length,
+                      padding: const EdgeInsets.only(bottom: 100),
+                      itemBuilder: (context, index) {
+                        final album = albums[index];
+                        return AlbumCard(
+                          album: album,
+                          selectionMode: selectionMode,
+                          isSelect: selectedAlbums.contains(album),
+                          onSelection: () => onAlbumSelection(album),
+                          onPress: () {
+                            if (selectionMode) {
+                              onAlbumSelection(album);
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      AlbumDetailsPage(album: album),
+                                ),
+                              );
+                            }
+                          },
+                        );
                       },
                     );
                   },

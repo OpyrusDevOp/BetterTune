@@ -8,7 +8,10 @@ import 'package:bettertune/presentations/pages/settings_page.dart';
 
 import 'package:bettertune/presentations/delegates/global_search_delegate.dart';
 import 'package:bettertune/services/auth_service.dart';
+import 'package:bettertune/services/songs_service.dart';
+import 'package:bettertune/services/sync_service.dart';
 import 'package:bettertune/presentations/screens/onboarding_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -20,13 +23,36 @@ class MainScreen extends StatefulWidget {
 
 class MainScreenState extends State<MainScreen> {
   int currentPage = 0;
-  final pages = [
-    SongsPage(),
-    AlbumsPage(),
-    ArtistsPage(),
-    PlaylistsPage(),
-    FavouritesPage(),
+  bool _syncing = false;
+  String _syncStatus = '';
+  // Incremented after auto-sync so pages rebuild and reload from the now-filled DB
+  int _syncVersion = 0;
+
+  List<Widget> get pages => [
+    SongsPage(key: ValueKey('songs_$_syncVersion')),
+    AlbumsPage(key: ValueKey('albums_$_syncVersion')),
+    ArtistsPage(key: ValueKey('artists_$_syncVersion')),
+    PlaylistsPage(key: ValueKey('playlists_$_syncVersion')),
+    FavouritesPage(key: ValueKey('favourites_$_syncVersion')),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // On web the DB is in-memory and empty after every reload — auto-sync.
+    if (kIsWeb) _autoSyncIfEmpty();
+  }
+
+  Future<void> _autoSyncIfEmpty() async {
+    final songs = await SongsService().getSongs();
+    if (songs.isNotEmpty || !mounted) return;
+    setState(() { _syncing = true; _syncStatus = 'Syncing library…'; });
+    await SyncService().syncLibrary((status) {
+      if (mounted) setState(() => _syncStatus = status);
+    });
+    if (!mounted) return;
+    setState(() { _syncing = false; _syncVersion++; });
+  }
 
   void _onTabTapped(int index) {
     setState(() {
@@ -54,12 +80,29 @@ class MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Expanded content page
-          Expanded(child: pages[currentPage]),
-          // Persistent Mini Player above the nav bar
-          MiniPlayer(),
+          Column(
+            children: [
+              Expanded(child: pages[currentPage]),
+              MiniPlayer(),
+            ],
+          ),
+          if (_syncing)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(_syncStatus,
+                        style: const TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

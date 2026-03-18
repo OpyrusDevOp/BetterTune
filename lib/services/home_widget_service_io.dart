@@ -23,8 +23,8 @@ class HomeWidgetService {
 
   Future<void> initialize() async {
     try {
-      HomeWidget.setAppGroupId('group.com.example.bettertune');
-      HomeWidget.registerBackgroundCallback(backgroundCallback);
+      await HomeWidget.setAppGroupId('group.com.example.bettertune');
+      await HomeWidget.registerBackgroundCallback(backgroundCallback);
     } catch (_) {
       // home_widget is not supported on this platform
       return;

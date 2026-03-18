@@ -60,32 +60,40 @@ class ArtistsPageState extends State<ArtistsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(5.0),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                  ),
-                  itemCount: artists.length,
-                  padding: const EdgeInsets.only(bottom: 100),
-                  itemBuilder: (context, index) {
-                    final artist = artists[index];
-                    return ArtistCard(
-                      artist: artist,
-                      selectionMode: selectionMode,
-                      isSelect: selectedArtists.contains(artist),
-                      onSelection: () => onArtistSelection(artist),
-                      onPress: () {
-                        if (selectionMode) {
-                          onArtistSelection(artist);
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ArtistDetailsPage(artist: artist),
-                            ),
-                          );
-                        }
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth;
+                    final cols = w > 1200 ? 6 : w > 800 ? 4 : w > 500 ? 3 : 2;
+                    return GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        mainAxisExtent: 180,
+                      ),
+                      itemCount: artists.length,
+                      padding: const EdgeInsets.only(bottom: 100),
+                      itemBuilder: (context, index) {
+                        final artist = artists[index];
+                        return ArtistCard(
+                          artist: artist,
+                          selectionMode: selectionMode,
+                          isSelect: selectedArtists.contains(artist),
+                          onSelection: () => onArtistSelection(artist),
+                          onPress: () {
+                            if (selectionMode) {
+                              onArtistSelection(artist);
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ArtistDetailsPage(artist: artist),
+                                ),
+                              );
+                            }
+                          },
+                        );
                       },
                     );
                   },
