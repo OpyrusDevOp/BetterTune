@@ -22,8 +22,13 @@ class HomeWidgetService {
       'com.example.bettertune.PLAY_QUEUE_ITEM';
 
   Future<void> initialize() async {
-    HomeWidget.setAppGroupId('group.com.example.bettertune');
-    HomeWidget.registerBackgroundCallback(backgroundCallback);
+    try {
+      HomeWidget.setAppGroupId('group.com.example.bettertune');
+      HomeWidget.registerBackgroundCallback(backgroundCallback);
+    } catch (_) {
+      // home_widget is not supported on this platform
+      return;
+    }
 
     // Handle launch from widget
     final Uri? initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();

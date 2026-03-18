@@ -91,7 +91,12 @@ class AudioPlayerService {
 
   Future<void> setQueue(List<Song> songs, {int initialIndex = 0}) async {
     try {
-      final headers = ApiClient().authHeaders;
+      // Stop and clear before replacing the source — on web the HTML5 audio
+      // element doesn't cancel buffered audio automatically, which causes the
+      // old audio to keep playing while the new song's metadata is already shown.
+      await _player.stop();
+
+      final headers = kIsWeb ? <String, String>{} : ApiClient().authHeaders;
 
       final children = songs.map((song) {
         final url = SongsService().getStreamUrl(song.id);
@@ -133,7 +138,7 @@ class AudioPlayerService {
 
   Future<void> addToQueueList(List<Song> songs) async {
     try {
-      final headers = ApiClient().authHeaders;
+      final headers = kIsWeb ? <String, String>{} : ApiClient().authHeaders;
       final List<AudioSource> newSources = [];
 
       for (var song in songs) {
