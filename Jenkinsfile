@@ -35,9 +35,6 @@ pipeline {
         // Requires /var/run/docker.sock mounted in the agent-1 container
         // so docker commands reach the HOST daemon, not a nested one.
         stage('Deploy') {
-            when {
-                branch 'main'
-            }
             agent {
                 label 'agent-1'
             }
