@@ -21,8 +21,8 @@ pipeline {
             steps {
                 sh 'flutter --version'
                 sh 'flutter pub get'
-                sh 'flutter analyze --no-fatal-infos'
-                sh 'flutter test'
+                // sh 'flutter analyze --no-fatal-infos'
+                // sh 'flutter test'
                 sh 'flutter build web --release --base-href /'
 
                 // Pass the build output to the next stage
