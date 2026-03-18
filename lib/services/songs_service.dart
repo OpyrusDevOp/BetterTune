@@ -4,6 +4,7 @@ import 'package:bettertune/models/song.dart';
 import 'package:bettertune/models/album.dart';
 import 'package:bettertune/models/artist.dart';
 import 'package:bettertune/services/settings_service.dart';
+import 'package:flutter/foundation.dart';
 
 class SongsService {
   static final SongsService _instance = SongsService._internal();
@@ -30,7 +31,16 @@ class SongsService {
     // Universal typically tries to transcode to container if not supported.
     // If we say we support ac3, Jellyfin might pass it through.
 
-    return '${client.baseUrl}/Audio/$songId/universal?UserId=${client.userId}&DeviceId=${client.deviceId}&Container=$container&TranscodingContainer=ts&TranscodingProtocol=hls&AudioCodec=$codec';
+    String url =
+        '${client.baseUrl}/Audio/$songId/universal?UserId=${client.userId}&DeviceId=${client.deviceId}&Container=$container&TranscodingContainer=ts&TranscodingProtocol=hls&AudioCodec=$codec';
+
+    // On web the browser audio element cannot send custom headers,
+    // so we authenticate via query parameter instead.
+    if (kIsWeb && client.accessToken != null) {
+      url += '&api_key=${client.accessToken}';
+    }
+
+    return url;
   }
 
   /// Fetch Albums (Local DB)

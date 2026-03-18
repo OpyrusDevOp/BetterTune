@@ -6,7 +6,8 @@ import 'package:bettertune/models/song.dart';
 import 'package:bettertune/services/api_client.dart';
 import 'package:bettertune/services/songs_service.dart'; // For Stream URL
 import 'package:flutter/foundation.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:just_audio_background/just_audio_background.dart'
+    if (dart.library.html) 'stubs/just_audio_background_stub.dart';
 
 class AudioPlayerService {
   static final AudioPlayerService _instance = AudioPlayerService._internal();

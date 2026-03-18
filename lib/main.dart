@@ -7,8 +7,8 @@ import 'package:bettertune/services/home_widget_service.dart';
 import 'package:bettertune/services/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:home_widget/home_widget.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:just_audio_background/just_audio_background.dart'
+    if (dart.library.html) 'services/stubs/just_audio_background_stub.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,15 +23,9 @@ Future<void> main() async {
   await authService.init();
   bool isLoggedIn = authService.isLoggedIn;
 
-  // Initialize home widget
+  // Initialize home widget (no-op on web)
   if (isLoggedIn) {
     await HomeWidgetService().initialize();
-
-    // Check if app was launched from widget
-    final Uri? initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-    if (initialUri != null) {
-      await HomeWidgetService.backgroundCallback(initialUri);
-    }
 
     // Setup Method Channel for Native->Dart calls (Queue Click)
     const channel = MethodChannel('com.example.bettertune/widget');

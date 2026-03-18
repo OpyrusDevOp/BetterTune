@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // For debugPrint
 import 'package:http/http.dart' as http;
 
@@ -127,6 +128,8 @@ class ApiClient {
     String url = '$baseUrl/Items/$itemId/Images/Primary?quality=90';
     if (width != null) url += '&width=$width';
     if (height != null) url += '&height=$height';
+    // On web, image requests are made by the browser without custom headers
+    if (kIsWeb && accessToken != null) url += '&api_key=$accessToken';
     return url;
   }
 }
